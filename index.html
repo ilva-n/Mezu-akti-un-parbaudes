@@ -9,16 +9,28 @@
       table {
         table-layout: fixed;
         width: 100%;
+        height: 100%
             }
 
       td {
         vertical-align: top;
         width: 33.3%;
+        height: 50%;
+        overflow: auto;
         }
 
-       #viewDiv {
-        height: 400px;
-        width: 600px;
+      #maprow {
+        height: 50vh;
+      }
+
+      #listDiv, #listDiv2, #listDiv3 {
+        height: 40vh;
+        overflow-y: scroll;
+      }
+
+      #viewDiv {
+        height: 50vh;
+        width: 50vw;
         }
 
 
@@ -29,12 +41,12 @@
   </head>
   <body>
   <table>
-    <tr>
+    <tr id="maprow">
       <td id="forMap" colspan="3">
         <div id="viewDiv"></div>
       </td>
     </tr>
-    <tr>
+    <tr id="textrow">
       <td id="forAkti">
         <div id="textDiv">
           <h1 id="virsraksts">Te meklēt aktus, kuros ir platības pārbaude </h1>
