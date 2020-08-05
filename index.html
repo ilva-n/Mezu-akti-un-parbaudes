@@ -102,8 +102,9 @@
         "esri/views/MapView",
         "esri/request",
         "esri/layers/GraphicsLayer",
-        "esri/Graphic"
-      ], function(Map, MapView, Request, GraphicsLayer, Graphic) {
+        "esri/Graphic", 
+        "esri/geometry/support/webMercatorUtils"
+      ], function(Map, MapView, Request, GraphicsLayer, Graphic, webMercatorUtils) {
   
       let map = new Map({
         basemap: "gray"
@@ -322,7 +323,6 @@
             paraugData.paraugaNr = feature.attributes.Akta_nr;
             paraugData.kaitOrg = feature.attributes.Kaitīgie_organismi;
             paraugData.kokSuga = feature.attributes.Koka_suga;
-            repList.push(paraugData);
 
             let attributes1 = {Kaitīgie_organismi: organisms}     
             let point = {
@@ -333,6 +333,16 @@
                 wkid: 3857
                 }       
             }
+
+            const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
+            paraugData.xCoord = gisPoint.x;
+            paraugData.yCoord = gisPoint.y;
+            attributes1.visiOrg = paraugData.kaitOrg;
+            attributes1.paraugaNr = paraugData.paraugaNr;
+            attributes1.kokSuga = paraugData.kokSuga;
+            attributes1.xCoord = paraugData.xCoord;
+            attributes1.yCoord = paraugData.yCoord;
+            repList.push(paraugData);
 
             let markerSymbol = {
               type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
@@ -347,7 +357,27 @@
             var pointGraphic = new Graphic({
               geometry: point,
               symbol: markerSymbol,
-              attributes: attributes1
+              attributes: attributes1,
+              popupTemplate: {
+                // autocasts as new PopupTemplate()
+                title: "{paraugaNr}",
+                content: [
+                  {
+                    type: "fields",
+                    fieldInfos: [
+                      {
+                        fieldName: "xCoord"
+                      },
+                      {
+                        fieldName: "yCoord"
+                      },
+                      {
+                        fieldName: "visiOrg"
+                      }
+                    ]
+                  }
+                ]
+              }
             });
 
             //add graphics
@@ -366,7 +396,7 @@
               label.addEventListener("click", (e) => {
                 for (const el of parauguObjekts[organisms]) {
                   let p = document.createElement("p");
-                  p.textContent = `${el.paraugaNr}, ${el.kaitOrg}, ${el.kokSuga}`;
+                  p.textContent = `${el.paraugaNr}, ${el.kaitOrg}, ${el.kokSuga}, ${el.xCoord}, ${el.yCoord}`;
                   paraugiDiv.appendChild(p);
                 }
                 e.target.addEventListener("click", () => {
@@ -421,7 +451,9 @@
           let repList = [];
           //salasīt aktu numurus no rezultātiem un samest listē replist.
           for (const feature of results) {
-            repList.push(feature.attributes.Akta_nr);
+            let koksData = {};
+            koksData.Akta_nr = feature.attributes.Akta_nr;
+
             let attributes1 = feature.attributes;
            // Uzzīmēt punktu
             let point = {
@@ -433,6 +465,12 @@
                 }       
             }
 
+            let gisPoint = webMercatorUtils.webMercatorToGeographic(point);
+            attributes1.xCoord = gisPoint.x;
+            attributes1.yCoord = gisPoint.y;
+            koksData.xCoord = gisPoint.x;
+            koksData.yCoord = gisPoint.y;
+            repList.push(koksData);
             let markerSymbol = {
               type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
               color: krasa,
@@ -446,7 +484,24 @@
             let pointGraphic = new Graphic({
               geometry: point,
               symbol: markerSymbol,
-              attributes: attributes1
+              attributes: attributes1,
+              popupTemplate: {
+                // autocasts as new PopupTemplate()
+                title: "{Akta_nr}",
+                content: [
+                  {
+                    type: "fields",
+                    fieldInfos: [
+                      {
+                        fieldName: "xCoord"
+                      },
+                      {
+                        fieldName: "yCoord"
+                      }
+                    ]
+                  }
+                ]
+              }
             });
 
             //add graphics
@@ -470,6 +525,7 @@
                   //katram no aktu numuriem izveido savu p
                   let p = document.createElement("p");
                   p.textContent = el;
+                  p.textContent = `${el.Akta_nr}, ${el.xCoord}, ${el.yCoord}`;
                   aktiDiv.appendChild(p);
                 }
                 e.target.addEventListener("click", () => {
@@ -533,26 +589,6 @@
               geometry: polygon,
               symbol: fillSymbol,
               attributes: attributes1,
-              popupTemplate: {
-                // autocasts as new PopupTemplate()
-                title: "{Akta_nr}",
-                content: [
-                  {
-                    type: "fields",
-                    fieldInfos: [
-                      {
-                        fieldName: "Akta_nr"
-                      },
-                      {
-                        fieldName: "Kaitīgie_organismi"
-                      },
-                      {
-                        fieldName: "Koku_sugas"
-                      }
-                    ]
-                  }
-                ]
-              }
             });
             
             // uzzīmēt punktu uz poligona rings pirmā punkta
@@ -566,6 +602,9 @@
            // 7743457.16553558
             }
 
+            const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
+            attributes1.xCoord = gisPoint.x;
+            attributes1.yCoord = gisPoint.y;
             let markerSymbol = {
               type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
               color: colOR,
@@ -579,7 +618,30 @@
             var pointGraphic = new Graphic({
               geometry: point,
               symbol: markerSymbol,
-              attributes: attributes1
+              attributes: attributes1,
+              popupTemplate: {
+                // autocasts as new PopupTemplate()
+                title: "{Akta_nr}",
+                content: [
+                  {
+                    type: "fields",
+                    fieldInfos: [
+                      {
+                        fieldName: "xCoord"
+                      },
+                      {
+                        fieldName: "yCoord"
+                      },
+                      {
+                        fieldName: "Kaitīgie_organismi"
+                      },
+                      {
+                        fieldName: "Koku_sugas"
+                      }
+                    ]
+                  }
+                ]
+              }
             });
 
           //add graphics
