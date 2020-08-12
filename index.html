@@ -86,6 +86,8 @@
       let r4;
       let r5;
       let r6;
+      let novaduSlanis;
+      let novadiFeatures;
       let graphicsLayer;
       let graphicsLayer2;
       let graphicsLayer3;
@@ -95,6 +97,7 @@
       let aktuObjekts = {};
       let parauguObjekts = {};
       let kokuObjekts = {};
+      let onemore;
 
 
       require([
@@ -103,8 +106,9 @@
         "esri/request",
         "esri/layers/GraphicsLayer",
         "esri/Graphic", 
-        "esri/geometry/support/webMercatorUtils"
-      ], function(Map, MapView, Request, GraphicsLayer, Graphic, webMercatorUtils) {
+        "esri/geometry/support/webMercatorUtils",
+        "esri/layers/FeatureLayer"
+      ], function(Map, MapView, Request, GraphicsLayer, Graphic, webMercatorUtils, FeatureLayer) {
   
       let map = new Map({
         basemap: "gray"
@@ -116,6 +120,34 @@
         center: [24.23308, 56.96001], // longitude, latitude 
         zoom: 7
       });
+
+      novaduSlanis = new FeatureLayer({
+        url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
+      });
+      
+
+      let point666 = {
+        type: "point", // autocasts as new Point()
+          x: 24.23308,
+          y: 56.96001,
+          spatialReference: {
+            wkid: 4326
+          }       
+      }
+      //featurelayer.queryfeatures piemērs
+      let novadiQuery = {
+        geometry: point666,
+        spatialRelationship: "intersects",
+        outFields: ["*"],
+        returnGeometry: false,
+        where: "1=1"
+      };
+      
+    // queryfeatures ir promise
+      novaduSlanis.queryFeatures(novadiQuery).then(
+        (response) => {
+          novadiFeatures = response;
+        });
 
       graphicsLayer = new GraphicsLayer();
       graphicsLayer2 = new GraphicsLayer();
@@ -556,10 +588,13 @@
             //returnCountOnly: true            
           }
         }
+        let repList = [];
+        let pointGraphicsArray1 = [];
+        let polygonGraphicsArray1 = [];
         Request(url, options2).then(function(response) {
           r2 = response;
           let results = response.data.features;
-          let repList = [];
+          
           //alert(results[0].geometry.rings[0][0][1]);
           //salasīt aktu numurus no rezultātiem, kas ir šai sugai un samest listē replist.
           for (const feature of results) {
@@ -592,7 +627,7 @@
             });
             
             // uzzīmēt punktu uz poligona rings pirmā punkta
-           var point = {
+           let point = {
             type: "point", // autocasts as new Point()
             x: feature.geometry.rings[0][0][0], // 2713841.85385366
             y: feature.geometry.rings[0][0][1],
@@ -605,6 +640,7 @@
             const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
             attributes1.xCoord = gisPoint.x;
             attributes1.yCoord = gisPoint.y;
+
             let markerSymbol = {
               type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
               color: colOR,
@@ -637,6 +673,9 @@
                       },
                       {
                         fieldName: "Koku_sugas"
+                      },
+                      {
+                        fieldName: "novads"
                       }
                     ]
                   }
@@ -644,10 +683,35 @@
               }
             });
 
-          //add graphics
-            graphicsLayer.add(pointGraphic);
-            graphicsLayer.add(polygonGraphic);
+            //add graphics
+            //graphicsLayer.add(pointGraphic);
+            //graphicsLayer.add(polygonGraphic);
+            pointGraphicsArray1.push(pointGraphic);
+            polygonGraphicsArray1.push(polygonGraphic);
+
           }
+
+          let queryPromisesArray = pointGraphicsArray1.map((gra) => {
+            let novadiQuery = {
+              geometry: gra.geometry,
+              spatialRelationship: "intersects",
+              outFields: "Nos_pilns",
+              returnGeometry: false,
+              where: "1=1"
+            };
+            return novaduSlanis.queryFeatures(novadiQuery); 
+          });
+
+          // queryfeatures ir promise
+          Promise.all(queryPromisesArray).then((response12) => {
+           onemore = response12;
+           for (let i = 0; i < pointGraphicsArray1.length; i++) {
+             pointGraphicsArray1[i].attributes.novads = response12[i].features[0].attributes.Nos_pilns;
+             graphicsLayer.add(pointGraphicsArray1[i]);
+             graphicsLayer.add(polygonGraphicsArray1[i]);
+           }
+          });
+          console.log(pointGraphicsArray1);
           // izveido aktu sarakstu
           //pievieno aktuobjektam, piemēram aktuObjekts."Erwinia amylovora" = ["102-AKA-223-20", 094-AKA-213-20 utt]
           aktuObjekts[species] = repList;
@@ -678,9 +742,8 @@
               }, {once:true});
             }
           }
-          
-        });
-      }
+        });  
+      } 
       
       const removeSpeciesGraphic = (species, field, layer) => {
         let grlist = layer.graphics.items.filter(e => e.attributes[field] === species); 
