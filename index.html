@@ -160,7 +160,7 @@
       //const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2019jan_dec/FeatureServer/0/query?token=1x6jrQouWBYx1kCYkoVQ53RFft8jBSWO83OR1PFr_DKcQxzePfNniwk5I-XHHpB1YdG98YXVwNhwbF1IpQW78GHPuBnWlEBAdOYuV2xyyYG-FS1dxXaR5CWzMtuiLxh_x30uW6DICVNI2opwMoRLIc28VSzBiAWmIoAFq8N1X6bf4Qzxa0xoZloralCWHDsGo7jEBqhBJxLXy6X2xT5RYFVlsbP1D_OCsRoUAW6iC0I.";
       
       //2020.gada paraugi
-      const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020jan_20jul/FeatureServer/0/query?token=X47D3D6fmd5mhtxPIbhrkQwlL1BE7wlBMt1yqhwJGq35Dva5www3CDjsfo8ldiq0XbGDW9GV4RU63pejaXIJ6jv_3XLTs3FUHqNwZrZ0DRLcbPDh6WtXHiBiXHpbJBOxQ9o0X_ovsbCiQyFvnd5dWnu-JcsfkIDuAKUno7IrZo4InfYzKhuvntFA_hd332LtKksafAK9jJdV37aV-UuKlMCQ6gcigDKv52VMYxobGsU."
+      const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020jan_20jul/FeatureServer/0/query"
 
       const paraugiOptions = {
         responseType: "json",
@@ -343,10 +343,14 @@
             //returnCountOnly: true            
           }
         }
+
+        let repList = [];
+        let pointGraphicsArray2 = [];
+
         Request(paraugiURL, options2).then(function(response) {
           r4 = response;
           let results = response.data.features;
-          let repList = [];
+
           //alert(results[0].geometry.rings[0][0][1]);
           
           for (const feature of results) {
@@ -405,6 +409,9 @@
                       },
                       {
                         fieldName: "visiOrg"
+                      },
+                      {
+                        fieldName: "novads"
                       }
                     ]
                   }
@@ -413,45 +420,66 @@
             });
 
             //add graphics
-            graphicsLayer2.add(pointGraphic);
+            pointGraphicsArray2.push(pointGraphic);
           }
-          // izveido aktu sarakstu (saucas paraugu saraksts, bet tas ir aktu saraksts)
-          parauguObjekts[organisms] = repList;
-          let labelList = document.getElementsByTagName("label");
-          for (const label of labelList) {
-            if (label.textContent === organisms) {
-              let parentNode = label.parentNode;
-              let paraugiDiv = document.createElement("div");
-              paraugiDiv.className = "paraugiNr";
-              paraugiDiv.value = organisms;
-              parentNode.appendChild(paraugiDiv);
-              label.addEventListener("click", (e) => {
-                for (const el of parauguObjekts[organisms]) {
-                  let p = document.createElement("p");
-                  p.textContent = `${el.paraugaNr}, ${el.kaitOrg}, ${el.kokSuga}, ${el.xCoord}, ${el.yCoord}`;
-                  paraugiDiv.appendChild(p);
-                }
-                e.target.addEventListener("click", () => {
-                  let divs = label.parentNode.getElementsByTagName("div");
-                  let div1 = divs[0];
-                  if (div1.style.display === "none") {
-                    div1.style.display = "block";
-                   } else {
-                    div1.style.display = "none";
-                    }
-                });
-              }, {once:true});
-            } 
-          }
-          
+
+          let queryPromisesArray = pointGraphicsArray2.map((gra) => {
+            let novadiQuery = {
+              geometry: gra.geometry,
+              spatialRelationship: "intersects",
+              outFields: "Nos_pilns",
+              returnGeometry: false,
+              where: "1=1"
+            };
+            return novaduSlanis.queryFeatures(novadiQuery); 
+          });
+
+          Promise.all(queryPromisesArray).then((response) => {
+            onemore = response;
+            for (let i = 0; i < pointGraphicsArray2.length; i++) {
+             pointGraphicsArray2[i].attributes.novads = response[i].features[0].attributes.Nos_pilns;
+             repList[i].novads = response[i].features[0].attributes.Nos_pilns;
+              //add graphics to map
+             graphicsLayer2.add(pointGraphicsArray2[i]);
+            }
+
+            // izveido aktu sarakstu (saucas paraugu saraksts, bet tas ir aktu saraksts)
+            parauguObjekts[organisms] = repList;
+            let labelList = document.getElementsByTagName("label");
+            for (const label of labelList) {
+              if (label.textContent === organisms) {
+                let parentNode = label.parentNode;
+                let paraugiDiv = document.createElement("div");
+                paraugiDiv.className = "paraugiNr";
+                paraugiDiv.value = organisms;
+                parentNode.appendChild(paraugiDiv);
+                label.addEventListener("click", (e) => {
+                  for (const el of parauguObjekts[organisms]) {
+                    let p = document.createElement("p");
+                    p.textContent = `${el.xCoord}; ${el.yCoord}; ${el.paraugaNr}; ${el.kaitOrg}; ${el.kokSuga}; ${el.novads}`;
+                    paraugiDiv.appendChild(p);
+                  }
+                  e.target.addEventListener("click", () => {
+                    let divs = label.parentNode.getElementsByTagName("div");
+                    let div1 = divs[0];
+                    if (div1.style.display === "none") {
+                      div1.style.display = "block";
+                    } else {
+                      div1.style.display = "none";
+                      }
+                  });
+                }, {once:true});
+              } 
+            }
+          });
         }); 
       }
 
       //2019.g akti
       //const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2019jan_dec/FeatureServer/0/query?token=X47D3D6fmd5mhtxPIbhrkQwlL1BE7wlBMt1yqhwJGq35Dva5www3CDjsfo8ldiq0XbGDW9GV4RU63pejaXIJ6jv_3XLTs3FUHqNwZrZ0DRLcbPDh6WtXHiBiXHpbJBOxQ9o0X_ovsbCiQyFvnd5dWnu-JcsfkIDuAKUno7IrZo4InfYzKhuvntFA_hd332LtKksafAK9jJdV37aV-UuKlMCQ6gcigDKv52VMYxobGsU.";
       // 2020.gada akti līdz 20.jūlijam
-      const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2020jan_20jul/FeatureServer/0/query?token=X47D3D6fmd5mhtxPIbhrkQwlL1BE7wlBMt1yqhwJGq35Dva5www3CDjsfo8ldiq0XbGDW9GV4RU63pejaXIJ6jv_3XLTs3FUHqNwZrZ0DRLcbPDh6WtXHiBiXHpbJBOxQ9o0X_ovsbCiQyFvnd5dWnu-JcsfkIDuAKUno7IrZo4InfYzKhuvntFA_hd332LtKksafAK9jJdV37aV-UuKlMCQ6gcigDKv52VMYxobGsU."
-     
+      //const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2020jan_20jul/FeatureServer/0/query?token=X47D3D6fmd5mhtxPIbhrkQwlL1BE7wlBMt1yqhwJGq35Dva5www3CDjsfo8ldiq0XbGDW9GV4RU63pejaXIJ6jv_3XLTs3FUHqNwZrZ0DRLcbPDh6WtXHiBiXHpbJBOxQ9o0X_ovsbCiQyFvnd5dWnu-JcsfkIDuAKUno7IrZo4InfYzKhuvntFA_hd332LtKksafAK9jJdV37aV-UuKlMCQ6gcigDKv52VMYxobGsU."
+      const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2020jan_20jul/FeatureServer/0/query";
       const options  = {
         responseType: "json",
         query: {
@@ -477,11 +505,15 @@
             //returnCountOnly: true            
           }
         }
+
+        let repList = [];
+        let pointGraphicsArray3 = [];
+
         Request(paraugiURL, options3).then(function(response) {
           r6 = response;
           let results = response.data.features;
-          let repList = [];
-          //salasīt aktu numurus no rezultātiem un samest listē replist.
+
+          //salasīt aktu numurus un citus atribūtus no rezultātiem un samest listē replist.
           for (const feature of results) {
             let koksData = {};
             koksData.Akta_nr = feature.attributes.Akta_nr;
@@ -529,6 +561,9 @@
                       },
                       {
                         fieldName: "yCoord"
+                      },
+                      {
+                        fieldName: "novads"
                       }
                     ]
                   }
@@ -536,42 +571,61 @@
               }
             });
 
-            //add graphics
-            graphicsLayer3.add(pointGraphic);
+            //push graphics into arrray
+            pointGraphicsArray3.push(pointGraphic);
           }
 
-          // izveido aktu sarakstu
-          //pievieno kokuobjektam, piemēram kokuObjekts.Tilia = ["102-AKA-223-20", 094-AKA-213-20 utt]
-          kokuObjekts[koks] = repList;
-          const kokuListe = document.getElementById("kokuListe");
-          let labelList = kokuListe.getElementsByTagName("label");
-          // sameklē visas labels un ieķeksētajai atbilstošajā listItem (tajā, kur atrodas čekbokss un label) izveido jaunu div elementu
-          for (const label of labelList) {
-            if (label.textContent === koks) {
-              let parentNode = label.parentNode;
-              let aktiDiv = document.createElement("div");
-              aktiDiv.className = "akti";
-              parentNode.appendChild(aktiDiv);
-              label.addEventListener("click", (e) => {
-                for (const el of kokuObjekts[koks]) {
-                  //katram no aktu numuriem izveido savu p
-                  let p = document.createElement("p");
-                  p.textContent = el;
-                  p.textContent = `${el.Akta_nr}, ${el.xCoord}, ${el.yCoord}`;
-                  aktiDiv.appendChild(p);
-                }
-                e.target.addEventListener("click", () => {
-                  let divs = label.parentNode.getElementsByTagName("div");
-                  let div1 = divs[0];
-                  if (div1.style.display === "none") {
-                    div1.style.display = "block";
-                   } else {
-                    div1.style.display = "none";
-                    }
-                });
-              }, {once: true}); 
+          let queryPromisesArray = pointGraphicsArray3.map((gra) => {
+            let novadiQuery = {
+              geometry: gra.geometry,
+              spatialRelationship: "intersects",
+              outFields: "Nos_pilns",
+              returnGeometry: false,
+              where: "1=1"
+            };
+            return novaduSlanis.queryFeatures(novadiQuery); 
+          });
+
+          Promise.all(queryPromisesArray).then((response) => {
+            //onemore = response;
+            for (let i = 0; i < pointGraphicsArray3.length; i++) {
+             pointGraphicsArray3[i].attributes.novads = response[i].features[0].attributes.Nos_pilns;
+             repList[i].novads = response[i].features[0].attributes.Nos_pilns;
+              //add graphics to map
+             graphicsLayer3.add(pointGraphicsArray3[i]);
             }
-          }   
+              // izveido aktu (un visādu citu štruntu) sarakstu
+            //pievieno kokuobjektam, piemēram kokuObjekts.Tilia = ["102-AKA-223-20", 094-AKA-213-20 utt]
+            kokuObjekts[koks] = repList;
+            const kokuListe = document.getElementById("kokuListe");
+            let labelList = kokuListe.getElementsByTagName("label");
+            // sameklē visas labels un ieķeksētajai atbilstošajā listItem (tajā, kur atrodas čekbokss un label) izveido jaunu div elementu
+            for (const label of labelList) {
+              if (label.textContent === koks) {
+                let parentNode = label.parentNode;
+                let aktiDiv = document.createElement("div");
+                aktiDiv.className = "akti";
+                parentNode.appendChild(aktiDiv);
+                label.addEventListener("click", (e) => {
+                  for (const el of kokuObjekts[koks]) {
+                    //katram no aktu numuriem izveido savu p
+                    let p = document.createElement("p");
+                    p.textContent = `${el.xCoord}; ${el.yCoord}; ${el.Akta_nr}; ${el.novads}`;
+                    aktiDiv.appendChild(p);
+                  }
+                  e.target.addEventListener("click", () => {
+                    let divs = label.parentNode.getElementsByTagName("div");
+                    let div1 = divs[0];
+                    if (div1.style.display === "none") {
+                      div1.style.display = "block";
+                    } else {
+                      div1.style.display = "none";
+                      }
+                  });
+                }, {once: true}); 
+              }
+            }   
+          });
         });
       }
 
@@ -596,9 +650,11 @@
           let results = response.data.features;
           
           //alert(results[0].geometry.rings[0][0][1]);
-          //salasīt aktu numurus no rezultātiem, kas ir šai sugai un samest listē replist.
+          //salasīt aktu numurus (un tagad arī visu ko citu) no rezultātiem, kas ir šai sugai un samest listē replist.
           for (const feature of results) {
-            repList.push(feature.attributes.Akta_nr);
+            let platibaData = {};
+            platibaData.Akta_nr = feature.attributes.Akta_nr;
+
             // Uzzīmēt poligonu
             let polygon = {
               type: "polygon", // autocasts as new Polygon()
@@ -640,6 +696,8 @@
             const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
             attributes1.xCoord = gisPoint.x;
             attributes1.yCoord = gisPoint.y;
+            platibaData.xCoord = gisPoint.x;
+            platibaData.yCoord = gisPoint.y;
 
             let markerSymbol = {
               type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
@@ -683,11 +741,9 @@
               }
             });
 
-            //add graphics
-            //graphicsLayer.add(pointGraphic);
-            //graphicsLayer.add(polygonGraphic);
             pointGraphicsArray1.push(pointGraphic);
             polygonGraphicsArray1.push(polygonGraphic);
+            repList.push(platibaData);
 
           }
 
@@ -707,41 +763,46 @@
            onemore = response12;
            for (let i = 0; i < pointGraphicsArray1.length; i++) {
              pointGraphicsArray1[i].attributes.novads = response12[i].features[0].attributes.Nos_pilns;
+             repList[i].novads = response12[i].features[0].attributes.Nos_pilns;
+              //add graphics to map
              graphicsLayer.add(pointGraphicsArray1[i]);
              graphicsLayer.add(polygonGraphicsArray1[i]);
            }
-          });
-          console.log(pointGraphicsArray1);
-          // izveido aktu sarakstu
-          //pievieno aktuobjektam, piemēram aktuObjekts."Erwinia amylovora" = ["102-AKA-223-20", 094-AKA-213-20 utt]
-          aktuObjekts[species] = repList;
-          let labelList = document.getElementsByTagName("label");
-          // sameklē visas labels un ieķeksētajai atbilstošajā listItem (tajā, kur atrodas čekbokss un label) izveido jaunu div elementu
-          for (const label of labelList) {
-            if (label.textContent === species) {
-              let parentNode = label.parentNode;
-              let aktiDiv = document.createElement("div");
-              aktiDiv.className = "akti";
-              parentNode.appendChild(aktiDiv);
-              label.addEventListener("click", (e) => {
-                for (const el of aktuObjekts[species]) {
-                  //katram no aktu numuriem izveido savu p
-                  let p = document.createElement("p");
-                  p.textContent = el;
-                  aktiDiv.appendChild(p);
-                }
-                e.target.addEventListener("click", () => {
-                  let divs = label.parentNode.getElementsByTagName("div");
-                  let div1 = divs[0];
-                  if (div1.style.display === "none") {
-                    div1.style.display = "block";
-                   } else {
-                    div1.style.display = "none";
-                    }
-                });
-              }, {once:true});
+            // izveido aktu sarakstu
+            //pievieno aktuobjektam, piemēram aktuObjekts."Erwinia amylovora" = ["102-AKA-223-20", 094-AKA-213-20 utt]
+            aktuObjekts[species] = repList;
+            let listDiv = document.querySelector("#listDiv");
+            let labelList = listDiv.getElementsByTagName("label");
+            // sameklē visas labels un ieķeksētajai atbilstošajā listItem (tajā, kur atrodas čekbokss un label) izveido jaunu div elementu
+            for (const label of labelList) {
+              if (label.textContent === species) {
+                let parentNode = label.parentNode;
+                let aktiDiv = document.createElement("div");
+                aktiDiv.className = "akti";
+                parentNode.appendChild(aktiDiv);
+                label.addEventListener("click", (e) => {
+                  for (const el of aktuObjekts[species]) {
+                    //katram no aktu numuriem izveido savu p
+                    let p = document.createElement("p");
+                      p.textContent = `${el.xCoord}; ${el.yCoord}; ${el.novads}; ${el.Akta_nr}`;
+                    aktiDiv.appendChild(p);
+                  }
+                  e.target.addEventListener("click", () => {
+                    let divs = label.parentNode.getElementsByTagName("div");
+                    let div1 = divs[0];
+                    if (div1.style.display === "none") {
+                      div1.style.display = "block";
+                    } else {
+                      div1.style.display = "none";
+                      }
+                  });
+                }, {once:true});
+              }
             }
-          }
+
+          });
+
+
         });  
       } 
       
