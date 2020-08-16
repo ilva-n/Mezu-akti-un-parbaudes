@@ -422,26 +422,39 @@
             //add graphics
             pointGraphicsArray2.push(pointGraphic);
           }
+          return pointGraphicsArray2;
+        }).then((returnedArray) => {
+            let queryPromisesArray = returnedArray.map((gra) => {
+              let novadiQuery = {
+                geometry: gra.geometry,
+                spatialRelationship: "intersects",
+                outFields: "Nos_pilns",
+                returnGeometry: false,
+                where: "1=1"
+              };
+              return novaduSlanis.queryFeatures(novadiQuery); 
+            });
+            return queryPromisesArray;
+        }).then((array) => {
+          return Promise.all(array);
+        }).then((resolvedArray) => {
+          let novaduListe = resolvedArray.map((el) => {
+              if (el.features.length > 0 && el.features[0].attributes.Nos_pilns) {
+                return el.features[0].attributes.Nos_pilns;
+              } else {
+                return "novads neatradās";
+              }
+           });
+            pointGraphicsArray2.forEach((gra, index) => {
+            const nov = novaduListe[index];
+            gra.attributes.novads = nov;
+              //console.log(gra);
+            });
 
-          let queryPromisesArray = pointGraphicsArray2.map((gra) => {
-            let novadiQuery = {
-              geometry: gra.geometry,
-              spatialRelationship: "intersects",
-              outFields: "Nos_pilns",
-              returnGeometry: false,
-              where: "1=1"
-            };
-            return novaduSlanis.queryFeatures(novadiQuery); 
-          });
-
-          Promise.all(queryPromisesArray).then((response) => {
-            onemore = response;
-            for (let i = 0; i < pointGraphicsArray2.length; i++) {
-             pointGraphicsArray2[i].attributes.novads = response[i].features[0].attributes.Nos_pilns;
-             repList[i].novads = response[i].features[0].attributes.Nos_pilns;
-              //add graphics to map
-             graphicsLayer2.add(pointGraphicsArray2[i]);
-            }
+            repList.forEach((item, index) => {
+              const nov = novaduListe[index];
+              item.novads = nov;
+            });
 
             // izveido aktu sarakstu (saucas paraugu saraksts, bet tas ir aktu saraksts)
             parauguObjekts[organisms] = repList;
@@ -471,8 +484,12 @@
                 }, {once:true});
               } 
             }
+            // add graphics to map
+            pointGraphicsArray2.forEach((gr) => {
+              graphicsLayer2.add(gr);
+            });
           });
-        }); 
+
       }
 
       //2019.g akti
@@ -574,8 +591,9 @@
             //push graphics into arrray
             pointGraphicsArray3.push(pointGraphic);
           }
-
-          let queryPromisesArray = pointGraphicsArray3.map((gra) => {
+          return pointGraphicsArray3;
+        }).then((returnedArray) => {
+          let queryPromisesArray = returnedArray.map((gra) => {
             let novadiQuery = {
               geometry: gra.geometry,
               spatialRelationship: "intersects",
@@ -585,15 +603,29 @@
             };
             return novaduSlanis.queryFeatures(novadiQuery); 
           });
+            return queryPromisesArray;
+        }).then((array)=> {
+         return Promise.all(array);
+        }).then((resolvedArray)=> {
+            let novaduListe = resolvedArray.map((el) => {
+              if (el.features.length > 0 && el.features[0].attributes.Nos_pilns) {
+                return el.features[0].attributes.Nos_pilns;
+              } else {
+                return "novads neatradās";
+              }
+           });
+            //console.log(novaduListe);
+            pointGraphicsArray3.forEach((gra, index) => {
+            const nov = novaduListe[index];
+            gra.attributes.novads = nov;
+              //console.log(gra);
+            });
 
-          Promise.all(queryPromisesArray).then((response) => {
-            //onemore = response;
-            for (let i = 0; i < pointGraphicsArray3.length; i++) {
-             pointGraphicsArray3[i].attributes.novads = response[i].features[0].attributes.Nos_pilns;
-             repList[i].novads = response[i].features[0].attributes.Nos_pilns;
-              //add graphics to map
-             graphicsLayer3.add(pointGraphicsArray3[i]);
-            }
+            repList.forEach((item, index) => {
+              const nov = novaduListe[index];
+              item.novads = nov;
+            });
+ 
               // izveido aktu (un visādu citu štruntu) sarakstu
             //pievieno kokuobjektam, piemēram kokuObjekts.Tilia = ["102-AKA-223-20", 094-AKA-213-20 utt]
             kokuObjekts[koks] = repList;
@@ -624,9 +656,13 @@
                   });
                 }, {once: true}); 
               }
-            }   
+            }
+              //add graphics to map
+            pointGraphicsArray3.forEach((gr) => {
+              graphicsLayer3.add(gr);
+            });
           });
-        });
+
       }
 
       const drawSpeciesGraphicCreateList = (species, colOR) => {
@@ -643,12 +679,12 @@
           }
         }
         let repList = [];
-        let pointGraphicsArray1 = [];
-        let polygonGraphicsArray1 = [];
+          let pointGraphicsArray1 = [];
+          let polygonGraphicsArray1 = [];
         Request(url, options2).then(function(response) {
           r2 = response;
           let results = response.data.features;
-          
+
           //alert(results[0].geometry.rings[0][0][1]);
           //salasīt aktu numurus (un tagad arī visu ko citu) no rezultātiem, kas ir šai sugai un samest listē replist.
           for (const feature of results) {
@@ -744,10 +780,12 @@
             pointGraphicsArray1.push(pointGraphic);
             polygonGraphicsArray1.push(polygonGraphic);
             repList.push(platibaData);
-
           }
 
-          let queryPromisesArray = pointGraphicsArray1.map((gra) => {
+          return pointGraphicsArray1;
+        }).then((returnedArray) => {
+
+          let queryPromisesArray = returnedArray.map((gra) => {
             let novadiQuery = {
               geometry: gra.geometry,
               spatialRelationship: "intersects",
@@ -757,17 +795,31 @@
             };
             return novaduSlanis.queryFeatures(novadiQuery); 
           });
-
+            return queryPromisesArray;
+        }).then((array)=> {
           // queryfeatures ir promise
-          Promise.all(queryPromisesArray).then((response12) => {
-           onemore = response12;
-           for (let i = 0; i < pointGraphicsArray1.length; i++) {
-             pointGraphicsArray1[i].attributes.novads = response12[i].features[0].attributes.Nos_pilns;
-             repList[i].novads = response12[i].features[0].attributes.Nos_pilns;
-              //add graphics to map
-             graphicsLayer.add(pointGraphicsArray1[i]);
-             graphicsLayer.add(polygonGraphicsArray1[i]);
-           }
+         return Promise.all(array);
+        }).then((resolvedArray) => {
+           onemore = resolvedArray;
+           let novaduListe = resolvedArray.map((el) => {
+            if (el.features.length > 0 && el.features[0].attributes.Nos_pilns) {
+              return el.features[0].attributes.Nos_pilns;
+            } else {
+              return "novads neatradās";
+            }
+           });
+            //console.log(novaduListe);
+            pointGraphicsArray1.forEach((gra, index) => {
+              const nov = novaduListe[index];
+              gra.attributes.novads = nov;
+              //console.log(gra);
+            });
+
+            repList.forEach((item, index) => {
+              const nov = novaduListe[index];
+              item.novads = nov;
+            });
+           //console.log(repList);
             // izveido aktu sarakstu
             //pievieno aktuobjektam, piemēram aktuObjekts."Erwinia amylovora" = ["102-AKA-223-20", 094-AKA-213-20 utt]
             aktuObjekts[species] = repList;
@@ -799,11 +851,18 @@
                 }, {once:true});
               }
             }
-
+            //add graphics to map
+            pointGraphicsArray1.forEach((gr) => {
+              graphicsLayer.add(gr);
+            });
+            polygonGraphicsArray1.forEach((gr) => {
+              graphicsLayer.add(gr);
+            });
+           
           });
 
 
-        });  
+
       } 
       
       const removeSpeciesGraphic = (species, field, layer) => {
