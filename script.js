@@ -1,21 +1,17 @@
+"use strict"
+
 let r;
 let r2;
 let r3;
 let r4;
 let r5;
 let r6;
-let novaduSlanis;
-let novadiFeatures;
-let graphicsLayer;
-let graphicsLayer2;
-let graphicsLayer3;
 let sugas2 = [];
 let koki2 = [];
 let organismi2 = [];
 let aktuObjekts = {};
 let parauguObjekts = {};
 let kokuObjekts = {};
-let onemore;
 
 
 require([
@@ -39,37 +35,13 @@ let view = new MapView({
   zoom: 7
 });
 
-novaduSlanis = new FeatureLayer({
+const novaduSlanis = new FeatureLayer({
   url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
 });
 
-
-let point666 = {
-  type: "point", // autocasts as new Point()
-    x: 24.23308,
-    y: 56.96001,
-    spatialReference: {
-      wkid: 4326
-    }       
-}
-//featurelayer.queryfeatures piemērs
-let novadiQuery = {
-  geometry: point666,
-  spatialRelationship: "intersects",
-  outFields: ["*"],
-  returnGeometry: false,
-  where: "1=1"
-};
-
-// queryfeatures ir promise
-novaduSlanis.queryFeatures(novadiQuery).then(
-  (response) => {
-    novadiFeatures = response;
-  });
-
-graphicsLayer = new GraphicsLayer();
-graphicsLayer2 = new GraphicsLayer();
-graphicsLayer3 = new GraphicsLayer();
+const graphicsLayer = new GraphicsLayer();
+const graphicsLayer2 = new GraphicsLayer();
+const graphicsLayer3 = new GraphicsLayer();
   map.add(graphicsLayer);
   map.add(graphicsLayer2);
   map.add(graphicsLayer3);
@@ -111,7 +83,7 @@ const addParaugi = () => {
     Request(paraugiURL, paraugiOptions).then(function (response) {
       r3 = response;
       const organismi = [];
-      let organismi1 = [];
+      const organismi1 = [];
       //numurētās paraugu listes izveidošana
       const organismiList = document.createElement("ol");
       document.getElementById("listDiv2").appendChild(organismiList);
@@ -718,7 +690,6 @@ const drawSpeciesGraphicCreateList = (species, colOR) => {
     // queryfeatures ir promise
    return Promise.all(array);
   }).then((resolvedArray) => {
-     onemore = resolvedArray;
      let novaduListe = resolvedArray.map((el) => {
       if (el.features.length > 0 && el.features[0].attributes.Nos_pilns) {
         return el.features[0].attributes.Nos_pilns;
