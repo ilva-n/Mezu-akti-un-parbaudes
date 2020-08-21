@@ -50,7 +50,8 @@ const graphicsLayer3 = new GraphicsLayer();
 //const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2019jan_dec/FeatureServer/0/query?token=1x6jrQouWBYx1kCYkoVQ53RFft8jBSWO83OR1PFr_DKcQxzePfNniwk5I-XHHpB1YdG98YXVwNhwbF1IpQW78GHPuBnWlEBAdOYuV2xyyYG-FS1dxXaR5CWzMtuiLxh_x30uW6DICVNI2opwMoRLIc28VSzBiAWmIoAFq8N1X6bf4Qzxa0xoZloralCWHDsGo7jEBqhBJxLXy6X2xT5RYFVlsbP1D_OCsRoUAW6iC0I.";
 
 //2020.gada paraugi
-const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020jan_20jul/FeatureServer/0/query"
+//const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020jan_20jul/FeatureServer/0/query";
+const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/mezuparb_paraugi2020/FeatureServer/0/query";
 
 const paraugiOptions = {
   responseType: "json",
@@ -386,7 +387,8 @@ const drawParaugiCreateList = (organisms, colOR) => {
 //const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2019jan_dec/FeatureServer/0/query?token=X47D3D6fmd5mhtxPIbhrkQwlL1BE7wlBMt1yqhwJGq35Dva5www3CDjsfo8ldiq0XbGDW9GV4RU63pejaXIJ6jv_3XLTs3FUHqNwZrZ0DRLcbPDh6WtXHiBiXHpbJBOxQ9o0X_ovsbCiQyFvnd5dWnu-JcsfkIDuAKUno7IrZo4InfYzKhuvntFA_hd332LtKksafAK9jJdV37aV-UuKlMCQ6gcigDKv52VMYxobGsU.";
 // 2020.gada akti līdz 20.jūlijam
 //const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2020jan_20jul/FeatureServer/0/query?token=X47D3D6fmd5mhtxPIbhrkQwlL1BE7wlBMt1yqhwJGq35Dva5www3CDjsfo8ldiq0XbGDW9GV4RU63pejaXIJ6jv_3XLTs3FUHqNwZrZ0DRLcbPDh6WtXHiBiXHpbJBOxQ9o0X_ovsbCiQyFvnd5dWnu-JcsfkIDuAKUno7IrZo4InfYzKhuvntFA_hd332LtKksafAK9jJdV37aV-UuKlMCQ6gcigDKv52VMYxobGsU."
-const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2020jan_20jul/FeatureServer/0/query";
+//const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2020jan_20jul/FeatureServer/0/query";
+const url = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/mezuparb_akti2020/FeatureServer/0/query";
 const options  = {
   responseType: "json",
   query: {
