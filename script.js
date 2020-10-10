@@ -154,12 +154,8 @@ require([
         chk.type = "checkbox";
         chk.value = array[j];
       //colorComb - krāsa, lai katrai sugai bumbuļus zīmētu citā krāsā
-        if(j >= krasuRinda.length) {
-          chk.colorComb = krasuRinda[krasuRinda.length + j];
-        } else {
-          chk.colorComb = krasuRinda[j];
-        }
-        
+      let g = j % krasuRinda.length;
+        chk.colorComb = krasuRinda[g];
         chk.className = this.checkboxClassName;
         listItem.appendChild(chk);
         let lbl = document.createElement("label");
