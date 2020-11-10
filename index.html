@@ -33,6 +33,13 @@
         width: 50vw;
         }
 
+      #labojumi {
+        position: fixed;
+        width:400px;
+        right: 20px;
+        background:rgb(83, 136, 139);
+        z-index: 100;
+      }
 
     </style>
     <link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css">
@@ -40,11 +47,45 @@
     
   </head>
   <body>
+    <div id ="labojumi" style="display:none">
+      <h3>Labošanai, pievienošanai un nodzēšanai</h3>
+      <h5>Tikai koku un paraugu slānim</h5>
+      <div id = "labojumuAugsa">
+        <label>Id: </label>
+        <input type="text" id="labosanasIdLauks">
+        <button type="button" id="atrastPoga">Atrast</button>
+        <button id="jaunsPoga">Jauns</button>
+      </div>
+      <div id="atrastaisPunkts" style="display:none"></div>
+      <div id="tresaisLAucins" style="display:none">
+        <p id="atkalIdVieta"></p>
+        <label>x: </label>
+        <input type="text" id="x_aile">
+        <label>y: </label>
+        <input type="text" id="y_aile">
+        <label>Akta Nr: </label>
+        <input type="text" id="aktaAile">
+        <br>
+        <label>Parauga Nr:</label>
+        <input type="text" id="paraugaAile" placeholder="-">
+        <br>
+        <label>Koka suga: </label>
+        <input type="text" id="kokaAile">
+        <br>
+        <label>Kaitīgie organismi</label>
+        <input type="text" id="OrgAile">
+        <br>
+        <label>Pārbaudes datums</label>
+        <input type="text" id="DatumAile" placeholder="dd.mm.gggg">
+        <br>
+      </div>
+    </div>
   <table>
     <tr id="maprow">
       <td id="forMap" colspan="3">
         <div id="viewDiv"></div>
       </td>
+
     </tr>
     <tr id="textrow">
       <td id="forAkti">
@@ -78,6 +119,7 @@
     </tr>
     
   </table>
+
     <script src="script.js"></script>
   </body>
 </html>

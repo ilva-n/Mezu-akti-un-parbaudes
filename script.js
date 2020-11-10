@@ -30,6 +30,10 @@ require([
     url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
   });
 
+  const parauguSlanis = new FeatureLayer({
+    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/mezuparb_paraugi2020/FeatureServer/0"
+  });
+
   const graphicsLayer = new GraphicsLayer();
   const graphicsLayer2 = new GraphicsLayer();
   const graphicsLayer3 = new GraphicsLayer();
@@ -69,6 +73,7 @@ require([
       outFields: "Koka_suga"
     }        
   };
+
   const krasuRinda = [[0, 0, 255], [0, 255, 0], [0, 255, 255], [255, 0, 0], [255, 0, 255], [255, 255, 0], [0, 0, 125], [0, 125, 0], [0, 125, 125], [125, 0, 0], [125, 0, 125], [125, 125, 0], [125, 125, 125], [125, 125, 255], [125, 255, 125], [125, 255, 255], [255, 125, 125], [255, 125, 255], [255, 255, 125], [255, 150, 0], [255, 0, 150], [150, 0, 255], [0, 150, 255], [0, 255, 150], [150, 255, 0], [255, 200, 200], [255, 255, 200], [255, 200, 255], [200, 255, 255], [200, 255, 200], [200, 200, 255], [200, 200, 200]];
 
   const aktuDalasSpecialasLietas = {
@@ -259,6 +264,7 @@ require([
         this.uncheckAllBoxes();
         this.chooseSpecies();
       } else {
+        document.getElementById("labojumi").style.display = "block";
         this.dabutSuguSarakstu();
       }
     }, {once: true});
@@ -629,4 +635,204 @@ require([
   aktuObjekts.addToButton();
   parauguObjekts.addToButton();
   kokuObjekts.addToButton();
+
+    //notīrīt ailes
+  const notiritAiles = function() {
+    document.getElementById("atkalIdVieta").innerHTML = "";
+    document.getElementById("aktaAile").value = "";
+    document.getElementById("paraugaAile").value = "";
+    document.getElementById("kokaAile").value = "";
+    document.getElementById("OrgAile").value = "";
+    document.getElementById("DatumAile").value = "";
+    document.getElementById("labosanasIdLauks").value = "";
+    document.getElementById("x_aile").value = "";
+    document.getElementById("y_aile").value = "";
+    let augsa = document.getElementById("labojumuAugsa");
+      augsa.style = "display:block";
+    let laucins3 = document.getElementById("tresaisLAucins");
+      laucins3.style = "display:none";
+  }
+
+  //nolasīt ailes
+  const createNewFeatureObj = function() {
+    const obj = {};
+    obj.xkoord = document.getElementById("x_aile").value;
+    obj.ykoord = document.getElementById("y_aile").value;
+    const datumTeksts = document.getElementById("DatumAile").value;
+    const datumDalas = datumTeksts.split('.');
+    obj.attributes2 = {};
+    obj.attributes2.Akta_nr = document.getElementById("aktaAile").value;
+    obj.attributes2.Parauga_nr = document.getElementById("paraugaAile").value;
+    obj.attributes2.Koka_suga = document.getElementById("kokaAile").value;
+    obj.attributes2.Kaitīgie_organismi = document.getElementById("OrgAile").value;
+    obj.attributes2.Parbaudes_datums = new Date(datumDalas[2], datumDalas[1] - 1, datumDalas[0]);
+    return obj;
+  }
+
+  // izveidot jaunu Feature (new Graphic)
+  const createNewFeature1 = function(obj){
+    const point = {
+        type: "point",
+        x: obj.xkoord,
+        y: obj.ykoord,
+        spatialReference: { wkid:4326 }
+      };
+    const attributes2 = obj.attributes2;
+    const jaunsPunkts = new Graphic({
+        geometry: point,
+        attributes: attributes2
+      });
+    return jaunsPunkts;
+  };
+
+  // labošanas forma
+  const atvertLabosanasFormu = function(res) {
+    const laucins3 = document.getElementById("tresaisLAucins");
+      laucins3.style = "display:block";
+    document.getElementById("atrastaisPunkts").style = "display:none";
+    document.getElementById("atrastaisPunkts").innerHTML = "";
+    const respPoint = res.data.features[0].geometry;
+    const gisPoint = webMercatorUtils.webMercatorToGeographic(respPoint);
+    const idVieta = document.getElementById("atkalIdVieta");
+      idVieta.textContent = `Id: ${res.data.features[0].attributes.ObjectId}`;
+    const xVieta = document.getElementById("x_aile");
+      xVieta.value = gisPoint.x;
+    const yVieta = document.getElementById("y_aile");
+      yVieta.value = gisPoint.y;
+    const aktaAile = document.getElementById("aktaAile");
+      aktaAile.value = res.data.features[0].attributes.Akta_nr;
+    const paraugaAile = document.getElementById("paraugaAile");
+      paraugaAile.value = res.data.features[0].attributes.Parauga_nr;
+    const kokaAile = document.getElementById("kokaAile");
+      kokaAile.value = res.data.features[0].attributes.Koka_suga;
+    const orgAile = document.getElementById("OrgAile");
+      orgAile.value = res.data.features[0].attributes.Kaitīgie_organismi;
+    const datumAile = document.getElementById("DatumAile");
+      datumAile.value = res.data.features[0].attributes.Parbaudes_datums;
+    const apstPoga1 = document.createElement("button");
+      apstPoga1.innerHTML = "Apstiprināt";
+    const atceltPoga1 = document.createElement("button");
+      atceltPoga1.innerHTML = "Atcelt";
+    atceltPoga1.addEventListener("click", () => {
+        notiritAiles();
+        atceltPoga1.remove();
+        apstPoga1.remove();
+    });
+    apstPoga1.addEventListener("click", ()=> {
+      const noAilemNolasitais = createNewFeatureObj();
+      const punkts = createNewFeature1(noAilemNolasitais);
+      punkts.attributes.ObjectId = res.data.features[0].attributes.ObjectId;
+      //console.log(punkts);
+      const edits = {
+        updateFeatures: [punkts]
+      };
+      parauguSlanis.applyEdits(edits).then((edresult) => {
+        console.log(edresult);
+        atceltPoga1.innerHTML = "Atpakaļ";
+        apstPoga1.remove();
+        const pazinojums = document.createElement("p");
+        pazinojums.textContent = `Labots elements ar id ${edresult.updateFeatureResults[0].objectId}`;
+        laucins3.appendChild(pazinojums);
+        atceltPoga1.addEventListener("click", () => {
+          notiritAiles();
+          atceltPoga1.remove();
+          pazinojums.remove();
+        });
+      });
+    }, {once: true});
+    laucins3.appendChild(apstPoga1);
+    laucins3.appendChild(atceltPoga1);
+  }
+
+ //pievienot jaunu punktu
+ document.getElementById("jaunsPoga").addEventListener("click", () => {
+  const laucins3 = document.getElementById("tresaisLAucins");
+    laucins3.style = "display:block";
+  document.getElementById("labojumuAugsa").style="display:none";
+  const apstPoga1 = document.createElement("button");
+  apstPoga1.innerHTML = "Apstiprināt";
+  const atceltPoga1 = document.createElement("button");
+  atceltPoga1.innerHTML = "Atcelt";
+  laucins3.appendChild(apstPoga1);
+  laucins3.appendChild(atceltPoga1);
+  atceltPoga1.addEventListener("click", ()=> {
+    laucins3.style = "display:none";
+        let augsa = document.getElementById("labojumuAugsa");
+        augsa.style = "display:block";
+        atceltPoga1.remove();
+        apstPoga1.remove();
+  });
+  apstPoga1.addEventListener("click", () => {
+    const noAilemNolasitais = createNewFeatureObj();
+    const jaunsPunkts = createNewFeature1(noAilemNolasitais);
+    const edits = {
+      addFeatures: [jaunsPunkts]
+    };
+    parauguSlanis.applyEdits(edits).then((edresult) => {
+      console.log(edresult);
+      atceltPoga1.innerHTML = "Atpakaļ";
+      apstPoga1.remove();
+      const pazinojums = document.createElement("p");
+      pazinojums.textContent = `Pievienots jauns elements ar id ${edresult.addFeatureResults[0].objectId}`;
+      laucins3.appendChild(pazinojums);
+      atceltPoga1.addEventListener("click", () => {
+        notiritAiles();
+        atceltPoga1.remove();
+        pazinojums.remove();
+      });
+
+    });
+    
+  }, {once: true});
+
+ });
+
+ //atrast esošu punktu 
+  document.getElementById("atrastPoga").addEventListener("click", () => {
+    let idLaucins = document.getElementById("labosanasIdLauks");
+    let idNum = idLaucins.value;
+    const optionsLabosanai = {
+      responseType: "json",
+      query: {
+        f: "json",
+        where: `ObjectId='${idNum}'`,
+        returnGeometry: true,
+        outFields: "*"
+      }
+    }
+    Request(paraugiURL, optionsLabosanai).then((response) => {
+      //console.log(response);
+      let augsha = document.getElementById("labojumuAugsa");
+      let otrsLaucins = document.getElementById("atrastaisPunkts");
+      let p = document.createElement("p");
+      const respPoint = response.data.features[0].geometry;
+      const gisPoint = webMercatorUtils.webMercatorToGeographic(respPoint);
+      p.innerHTML = `Id: ${response.data.features[0].attributes.ObjectId} <br> Akta_nr: ${response.data.features[0].attributes.Akta_nr} <br>
+      Parauga nr: ${response.data.features[0].attributes.Parauga_nr} <br> Koka suga: ${response.data.features[0].attributes.Koka_suga} <br>
+      Kaitīgie organismi: ${response.data.features[0].attributes.Kaitīgie_organismi} <br> Pārbaudes datums: ${response.data.features[0].attributes.Parbaudes_datums} <br>
+      x_(lon): ${gisPoint.x}  <br> y_(lat): ${gisPoint.y}`
+      let labotPoga = document.createElement("button");
+      labotPoga.innerHTML = "Labot";
+      let dzestPoga = document.createElement("button");
+      dzestPoga.innerHTML = "Dzēst";
+      let atceltPoga = document.createElement("button");
+      //atceltPoga.id = "atcelsanasPoga";
+      atceltPoga.innerHTML = "Atcelt";
+      atceltPoga.addEventListener("click", () =>{
+        otrsLaucins.innerHTML = "";
+        otrsLaucins.style = "display:none";
+        document.getElementById("labosanasIdLauks").value = "";
+        augsha.style = "display:block";
+      })
+      otrsLaucins.appendChild(p);
+      otrsLaucins.appendChild(labotPoga);
+      otrsLaucins.appendChild(dzestPoga);
+      otrsLaucins.appendChild(atceltPoga);
+      otrsLaucins.style = "display:block";
+      augsha.style = "display:none";
+      labotPoga.addEventListener("click", () => {
+        atvertLabosanasFormu(response);
+      });
+    });
+  });
 });
