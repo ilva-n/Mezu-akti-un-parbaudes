@@ -636,7 +636,8 @@ require([
   parauguObjekts.addToButton();
   kokuObjekts.addToButton();
 
-    //notīrīt ailes
+  //Tālāk viss labošanai  
+  //notīrīt ailes
   const notiritAiles = function() {
     document.getElementById("atkalIdVieta").innerHTML = "";
     document.getElementById("aktaAile").value = "";
@@ -727,11 +728,15 @@ require([
         updateFeatures: [punkts]
       };
       parauguSlanis.applyEdits(edits).then((edresult) => {
-        console.log(edresult);
+        //console.log(edresult);
         atceltPoga1.innerHTML = "Atpakaļ";
         apstPoga1.remove();
         const pazinojums = document.createElement("p");
+        if (edresult.updateFeatureResults[0].error) {
+          pazinojums.textContent = `Labošana neizdevās: ${edresult.updateFeatureResults[0].error.name}: ${edresult.updateFeatureResults[0].error.message}`;
+        } else {
         pazinojums.textContent = `Labots elements ar id ${edresult.updateFeatureResults[0].objectId}`;
+        }
         laucins3.appendChild(pazinojums);
         atceltPoga1.addEventListener("click", () => {
           notiritAiles();
@@ -743,6 +748,25 @@ require([
     laucins3.appendChild(apstPoga1);
     laucins3.appendChild(atceltPoga1);
   }
+
+  // dzēst elementu
+  const deleteteFeature1 = function(res,laucins) {
+    const id = res.data.features[0].attributes.ObjectId;
+    const edits = {
+      deleteFeatures: [{objectId: id}]
+    };
+    parauguSlanis.applyEdits(edits).then((edresult) => {
+      //console.log(edresult);
+      const pazinojums = document.createElement("p");
+      if (edresult.deleteFeatureResults[0].error) {
+        pazinojums.textContent = `Dzēšana neizdevās: ${edresult.deleteFeatureResults[0].error.name}: ${edresult.deleteFeatureResults[0].error.message}`;
+      } else {
+      pazinojums.textContent = `Dzēsts elements ar id ${edresult.deleteFeatureResults[0].objectId}`;
+      }
+      laucins.appendChild(pazinojums);
+    });
+
+  };
 
  //pievienot jaunu punktu
  document.getElementById("jaunsPoga").addEventListener("click", () => {
@@ -769,20 +793,22 @@ require([
       addFeatures: [jaunsPunkts]
     };
     parauguSlanis.applyEdits(edits).then((edresult) => {
-      console.log(edresult);
+      //console.log(edresult);
       atceltPoga1.innerHTML = "Atpakaļ";
       apstPoga1.remove();
       const pazinojums = document.createElement("p");
+      if (edresult.addFeatureResults[0].error) {
+        pazinojums.textContent = `Pievienošana neizdevās: ${edresult.addFeatureResults[0].error.name}: ${edresult.addFeatureResults[0].error.message}`;
+      } else {
       pazinojums.textContent = `Pievienots jauns elements ar id ${edresult.addFeatureResults[0].objectId}`;
+      }
       laucins3.appendChild(pazinojums);
       atceltPoga1.addEventListener("click", () => {
         notiritAiles();
         atceltPoga1.remove();
         pazinojums.remove();
       });
-
-    });
-    
+    });  
   }, {once: true});
 
  });
@@ -802,37 +828,52 @@ require([
     }
     Request(paraugiURL, optionsLabosanai).then((response) => {
       //console.log(response);
+      //console.log(response.data.features.length);
       let augsha = document.getElementById("labojumuAugsa");
       let otrsLaucins = document.getElementById("atrastaisPunkts");
       let p = document.createElement("p");
-      const respPoint = response.data.features[0].geometry;
-      const gisPoint = webMercatorUtils.webMercatorToGeographic(respPoint);
-      p.innerHTML = `Id: ${response.data.features[0].attributes.ObjectId} <br> Akta_nr: ${response.data.features[0].attributes.Akta_nr} <br>
-      Parauga nr: ${response.data.features[0].attributes.Parauga_nr} <br> Koka suga: ${response.data.features[0].attributes.Koka_suga} <br>
-      Kaitīgie organismi: ${response.data.features[0].attributes.Kaitīgie_organismi} <br> Pārbaudes datums: ${response.data.features[0].attributes.Parbaudes_datums} <br>
-      x_(lon): ${gisPoint.x}  <br> y_(lat): ${gisPoint.y}`
-      let labotPoga = document.createElement("button");
-      labotPoga.innerHTML = "Labot";
-      let dzestPoga = document.createElement("button");
-      dzestPoga.innerHTML = "Dzēst";
       let atceltPoga = document.createElement("button");
-      //atceltPoga.id = "atcelsanasPoga";
-      atceltPoga.innerHTML = "Atcelt";
       atceltPoga.addEventListener("click", () =>{
         otrsLaucins.innerHTML = "";
         otrsLaucins.style = "display:none";
         document.getElementById("labosanasIdLauks").value = "";
         augsha.style = "display:block";
-      })
-      otrsLaucins.appendChild(p);
-      otrsLaucins.appendChild(labotPoga);
-      otrsLaucins.appendChild(dzestPoga);
-      otrsLaucins.appendChild(atceltPoga);
-      otrsLaucins.style = "display:block";
-      augsha.style = "display:none";
-      labotPoga.addEventListener("click", () => {
-        atvertLabosanasFormu(response);
       });
+      if (response.data.features.length > 0) {
+        const respPoint = response.data.features[0].geometry;
+        const gisPoint = webMercatorUtils.webMercatorToGeographic(respPoint);
+        p.innerHTML = `Id: ${response.data.features[0].attributes.ObjectId} <br> Akta_nr: ${response.data.features[0].attributes.Akta_nr} <br>
+        Parauga nr: ${response.data.features[0].attributes.Parauga_nr} <br> Koka suga: ${response.data.features[0].attributes.Koka_suga} <br>
+        Kaitīgie organismi: ${response.data.features[0].attributes.Kaitīgie_organismi} <br> Pārbaudes datums: ${response.data.features[0].attributes.Parbaudes_datums} <br>
+        x_(lon): ${gisPoint.x}  <br> y_(lat): ${gisPoint.y}`
+        let labotPoga = document.createElement("button");
+        labotPoga.innerHTML = "Labot";
+        let dzestPoga = document.createElement("button");
+        dzestPoga.innerHTML = "Dzēst";
+        atceltPoga.innerHTML = "Atcelt";
+        dzestPoga.addEventListener("click", () => {
+          deleteteFeature1(response, otrsLaucins);
+          atceltPoga.innerHTML = "Atpakaļ";
+          labotPoga.remove();
+          dzestPoga.remove();
+        });
+        otrsLaucins.appendChild(p);
+        otrsLaucins.appendChild(labotPoga);
+        otrsLaucins.appendChild(dzestPoga);
+        otrsLaucins.appendChild(atceltPoga);
+        otrsLaucins.style = "display:block";
+        augsha.style = "display:none";
+        labotPoga.addEventListener("click", () => {
+          atvertLabosanasFormu(response);
+        });
+      } else {
+        p.textContent = "tāds elements ir nodzēsts vai nekad nav bijis";
+        otrsLaucins.appendChild(p);
+        otrsLaucins.style = "display:block";
+        augsha.style = "display:none";
+        atceltPoga.innerHTML = "Atpakaļ";
+        otrsLaucins.appendChild(atceltPoga);
+      } 
     });
   });
 });
