@@ -206,31 +206,33 @@ require([
         const organismi = [];
         const organismi1 = [];
         for (let i=0; i < response.data.features.length; i++) {
-          organismi.push(response.data.features[i].attributes["Kaitīgie_organismi"]);
+          // if not null - gadās ar parauga numuru, bet bez KO
+          if (response.data.features[i].attributes["Kaitīgie_organismi"]) {
+            organismi.push(response.data.features[i].attributes["Kaitīgie_organismi"]);
+          }
         }
-              //tālāk ejam cauri jaunajam organismi sarakstam un par katru elementu
-              for (let i=0; i < organismi.length; i++) {
-                // if not null - gadās ar parauga numuru, bet bez KO
-                if (organismi[i]) {
-                //sadalīt pa semikoliem
-                let separateNames = organismi[i].split("; ");
-                
-                //jaunos katru kā vienu atsevišķu samest listē organismi1
-                    for (const nosaukums of separateNames) {
-                            organismi1.push(nosaukums);
-                    }
-                } else {console.log("te vienam bija parauga numurs, bet nebija organisms")}
-                
-            }
-            //izveidot jaunu listi organismi8, kur atfiltrēti nederīgie (tukšie un redzamie autoru vārdu fragmenti)
-            const organismi8 = organismi1.filter(word => (word.length > 4) && (word !== "O'Donnell") && (word !== "Buhrer)"));
-            //creating Set from array. Set contains unique values only
-            const uniqueSet = new Set(organismi8);
-            //back to array from Set
-            this.speciesList = [...uniqueSet];
+          //tālāk ejam cauri jaunajam organismi sarakstam un par katru elementu
+        for (let i=0; i < organismi.length; i++) {
+            //sadalīt pa semikoliem
+          let separateNames = organismi[i].split("; ");
+            //jaunos katru kā vienu atsevišķu samest listē organismi1
+            for (const nosaukums of separateNames) {
+              organismi1.push(nosaukums);
+            }      
+        }
+          //izveidot jaunu listi organismi8, kur atfiltrēti nederīgie (tukšie un redzamie autoru vārdu fragmenti)
+          const organismi8 = organismi1.filter(word => (word.length > 4) && (word !== "O'Donnell") && (word !== "Buhrer)"));
+          //creating Set from array. Set contains unique values only
+          const uniqueSet = new Set(organismi8);
+          //back to array from Set
+          this.speciesList = [...uniqueSet];
+          this.speciesList.sort();
       } else {
         for (let i=0; i < response.data.features.length; i++) {
-          this.speciesList.push(response.data.features[i].attributes[this.searchField]);       
+          if (response.data.features[i].attributes[this.searchField]) {
+            this.speciesList.push(response.data.features[i].attributes[this.searchField]);
+            this.speciesList.sort();       
+          }
         }
       }
       const specList = document.createElement("ol");
@@ -257,6 +259,7 @@ require([
           }
         }
         this.speciesList = sugas3;
+        this.speciesList.sort();
         const specList = document.createElement("ol");
         document.getElementById(this.listesVieta).appendChild(specList);
         this.createSpeciesList(this.speciesList, specList);
