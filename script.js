@@ -31,8 +31,9 @@ require([
   });
 
   const parauguSlanis = new FeatureLayer({
-    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/mezuparb_paraugi2020/FeatureServer/0"
-  });
+    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020/FeatureServer/0"
+  }); 
+
 
   const graphicsLayer = new GraphicsLayer();
   const graphicsLayer2 = new GraphicsLayer();
@@ -41,7 +42,8 @@ require([
     map.add(graphicsLayer2);
     map.add(graphicsLayer3);
 
-  const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/mezuparb_akti2020/FeatureServer/0/query";
+  const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti1/FeatureServer/0/query";
+  
   const aktioptions  = {
     responseType: "json",
     query: {
@@ -52,7 +54,7 @@ require([
       outFields: "Koku_sugas"
     }
   };
-  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/mezuparb_paraugi2020/FeatureServer/0/query";
+  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020/FeatureServer/0/query";
   const paraugiOptions = {
     responseType: "json",
     query: {
@@ -423,7 +425,7 @@ require([
             color: colOR,
             outline: {
               // autocasts as new SimpleLineSymbol()
-              color: [255, 255, 255],
+              color: [255, 0, 0],
               width: 2
             }
           };
@@ -639,6 +641,7 @@ require([
   parauguObjekts.addToButton();
   kokuObjekts.addToButton();
 
+
   //Tālāk viss labošanai  
   //notīrīt ailes
   const notiritAiles = function() {
@@ -830,8 +833,6 @@ require([
       }
     }
     Request(paraugiURL, optionsLabosanai).then((response) => {
-      //console.log(response);
-      //console.log(response.data.features.length);
       let augsha = document.getElementById("labojumuAugsa");
       let otrsLaucins = document.getElementById("atrastaisPunkts");
       let p = document.createElement("p");
