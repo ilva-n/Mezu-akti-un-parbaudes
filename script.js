@@ -665,14 +665,15 @@ require([
     const obj = {};
     obj.xkoord = document.getElementById("x_aile").value;
     obj.ykoord = document.getElementById("y_aile").value;
-    const datumTeksts = document.getElementById("DatumAile").value;
-    const datumDalas = datumTeksts.split('.');
+    //const datumTeksts = document.getElementById("DatumAile").value;
+    //const datumDalas = datumTeksts.split('.');
     obj.attributes2 = {};
     obj.attributes2.Akta_nr = document.getElementById("aktaAile").value;
     obj.attributes2.Parauga_nr = document.getElementById("paraugaAile").value;
     obj.attributes2.Koka_suga = document.getElementById("kokaAile").value;
     obj.attributes2.Kaitīgie_organismi = document.getElementById("OrgAile").value;
-    obj.attributes2.Parbaudes_datums = new Date(datumDalas[2], datumDalas[1] - 1, datumDalas[0]);
+    obj.attributes2.Parbaudes_datums = document.getElementById("DatumAile").value;
+    //obj.attributes2.Parbaudes_datums = new Date(datumDalas[2], datumDalas[1] - 1, datumDalas[0]);
     return obj;
   }
 
