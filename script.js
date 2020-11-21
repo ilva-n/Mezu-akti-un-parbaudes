@@ -308,6 +308,7 @@ require([
           attributes1.Akta_nr = itemData.Akta_nr;
           attributes1.kokSuga = itemData.kokSuga;
           attributes1.id = itemData.id;
+          attributes1.paraugaNr = feature.attributes.Parauga_nr;
         } else {
           itemData.Akta_nr = feature.attributes.Akta_nr;
           attributes1 = feature.attributes;
@@ -436,7 +437,7 @@ require([
             attributes: attributes1,
             popupTemplate: {
               // autocasts as new PopupTemplate()
-              title: "{Akta_nr}",
+              title: "{paraugaNr}",
               content: [
                 {
                   type: "fields",
@@ -449,6 +450,9 @@ require([
                     },
                     {
                       fieldName: "visiOrg"
+                    },
+                    {
+                      fieldName: "kokSuga"
                     },
                     {
                       fieldName: "novads"
