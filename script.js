@@ -510,6 +510,9 @@ require([
                       fieldName: "yCoord"
                     },
                     {
+                      fieldName: "Koka_suga"
+                    },
+                    {
                       fieldName: "novads"
                     },
                     {
