@@ -27,7 +27,8 @@ require([
   });
 
   const novaduSlanis = new FeatureLayer({
-    url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
+    //url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
+    url:"https://services1.arcgis.com/qbu95DaOMntesDTa/ArcGIS/rest/services/Planotas__Administrativas_teritorijas_2021/FeatureServer/0"
   });
 
   const parauguSlanis = new FeatureLayer({
@@ -42,7 +43,8 @@ require([
     map.add(graphicsLayer2);
     map.add(graphicsLayer3);
 
-  const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti1/FeatureServer/0/query";
+   //const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2021/FeatureServer/0/query";
+  const aktiURL ="https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2021_aug/FeatureServer/0/query";
   
   const aktioptions  = {
     responseType: "json",
@@ -54,7 +56,8 @@ require([
       outFields: "Koku_sugas"
     }
   };
-  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020/FeatureServer/0/query";
+   //const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020/FeatureServer/0/query";
+  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi/FeatureServer/0/query";
   const paraugiOptions = {
     responseType: "json",
     query: {
@@ -536,7 +539,7 @@ require([
         let novadiQuery = {
           geometry: gra.geometry,
           spatialRelationship: "intersects",
-          outFields: "Nos_pilns",
+          outFields: "NOSAUKUMS",
           returnGeometry: false,
           where: "1=1"
         };
@@ -548,8 +551,8 @@ require([
     return Promise.all(array);
     }).then((resolvedArray) => {
         let novaduListe = resolvedArray.map((el) => {
-          if (el.features.length > 0 && el.features[0].attributes.Nos_pilns) {
-            return el.features[0].attributes.Nos_pilns;
+          if (el.features.length > 0 && el.features[0].attributes.NOSAUKUMS) {
+            return el.features[0].attributes.NOSAUKUMS;
           } else {
             return "novads neatradās";
           }
