@@ -218,17 +218,26 @@ require([
         }
           //tālāk ejam cauri jaunajam organismi sarakstam un par katru elementu
         for (let i=0; i < organismi.length; i++) {
-            //sadalīt pa semikoliem
+          /*  //sadalīt pa semikoliem - šis bija iepriekš, tagad citādāk - ar regexu
           let separateNames = organismi[i].split("; ");
             //jaunos katru kā vienu atsevišķu samest listē organismi1
             for (const nosaukums of separateNames) {
               organismi1.push(nosaukums);
-            }      
+            }  */
+            //const regexxx = /\[(.*?)\]/g;
+            const regexxx = /(?<=\[).+?(?=\])/g;
+            const eppoKodi = organismi[i].match(regexxx);
+            if (eppoKodi){
+              organismi1.push(...eppoKodi);
+            }
         }
-          //izveidot jaunu listi organismi8, kur atfiltrēti nederīgie (tukšie un redzamie autoru vārdu fragmenti)
+          /* //izveidot jaunu listi organismi8, kur atfiltrēti nederīgie (tukšie un redzamie autoru vārdu fragmenti)
           const organismi8 = organismi1.filter(word => (word.length > 4) && (word !== "O'Donnell") && (word !== "Buhrer)"));
           //creating Set from array. Set contains unique values only
-          const uniqueSet = new Set(organismi8);
+          const uniqueSet = new Set(organismi8); */
+
+          // šis tagad jaunajam variantam - salasīt tikai EPPO kodus
+          const uniqueSet = new Set(organismi1);
           //back to array from Set
           this.speciesList = [...uniqueSet];
           this.speciesList.sort();
