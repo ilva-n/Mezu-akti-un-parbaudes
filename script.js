@@ -224,7 +224,7 @@ require([
             for (const nosaukums of separateNames) {
               organismi1.push(nosaukums);
             }  */
-            //const regexxx = /\[(.*?)\]/g;
+            //const regexxx = /\[(.*?)\]/g; šis būtu ar visām [] iekavām
             const regexxx = /(?<=\[).+?(?=\])/g;
             const eppoKodi = organismi[i].match(regexxx);
             if (eppoKodi){
