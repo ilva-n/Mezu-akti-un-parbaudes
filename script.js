@@ -4,6 +4,11 @@ let parauguObjekts;
 let kokuObjekts;
 let r;
 let r2;
+let rawPointObj;
+let rawPolyObj
+const visiKoki = {};
+const visiAkti = {};
+const visiParaugi = {};
 
 require([
   "esri/Map",
@@ -12,11 +17,104 @@ require([
   "esri/layers/GraphicsLayer",
   "esri/Graphic", 
   "esri/geometry/support/webMercatorUtils",
-  "esri/layers/FeatureLayer"
-], function(Map, MapView, Request, GraphicsLayer, Graphic, webMercatorUtils, FeatureLayer) {
+  "esri/layers/FeatureLayer",
+  "esri/smartMapping/symbology/support/colorRamps",
+  "esri/Color",
+  "esri/core/reactiveUtils"
+], function(Map, MapView, Request, GraphicsLayer, Graphic, webMercatorUtils, FeatureLayer, colorRamps, Color, reactiveUtils) {
+  let punktiLayerView, aktiLayerView;
+  const selectedKokItems = [];
+  const selectedOrgItems = [];
+  const selectedAktItems = [];
+  const paraugValueInfos = [];
+
+  const aktRenderer1 = {
+    type: "simple",  // autocasts as new SimpleRenderer()
+    symbol: {
+      type: "simple-fill",  // autocasts as new SimpleFillSymbol()
+      color: "orange",
+      outline: {  // autocasts as new SimpleLineSymbol()
+        width: 4,
+        color: "lime"
+      }
+    }
+  }; 
+
+  const parRenderer = {
+    type: "unique-value",  // autocasts as new UniqueValueRenderer()
+    field: "Koka_suga",
+    defaultSymbol: { type: "simple-marker" },  // autocasts as new new SimpleMarkerSymbol()
+  };
+  
+
+  const punktTemplate = {
+    title: "{Akta_nr}",
+    content: [
+        {
+          type: "fields",
+          fieldInfos: [
+            {
+              fieldName: "Parauga_nr"
+            },
+            {
+              fieldName: "Parbaudes_datums"
+            },
+            {
+              fieldName: "Koka_suga"
+            },
+            {
+              fieldName: "Kaitīgie_organismi"
+            },
+            {
+              fieldName: "ObjectId"
+            }
+          ]
+        }
+      ],
+  };
+
+  const aktTemplate = {
+    title: "{Akta_nr}",
+    content: [
+        {
+          type: "fields",
+          fieldInfos: [
+            {
+              fieldName: "Koku_sugas"
+            },
+            {
+              fieldName: "Kaitīgie_organismi"
+            },
+            {
+              fieldName: "ObjectId"
+            }
+          ]
+        }
+      ],
+  };
+
+
+  const novaduSlanis = new FeatureLayer({
+    //url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
+    url:"https://services1.arcgis.com/qbu95DaOMntesDTa/ArcGIS/rest/services/Planotas__Administrativas_teritorijas_2021/FeatureServer/0"
+  });
+
+  const parauguSlanis = new FeatureLayer({
+    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Paraugi/FeatureServer",
+    outFields: ["*"],
+    popupTemplate: punktTemplate
+  });
+  
+  const aktuSlanis = new FeatureLayer({
+    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Akti/FeatureServer/0",
+    renderer: aktRenderer1,
+    outFields: ["Akta_nr", "Koku_sugas", "ObjectId", "Pārbaudes_datums"],
+    popupTemplate: aktTemplate
+  })
 
   let map = new Map({
-    basemap: "gray"
+    basemap: "gray-vector",
+    layers: [novaduSlanis]
   });
 
   let view = new MapView({
@@ -25,26 +123,15 @@ require([
     center: [24.23308, 56.96001], // longitude, latitude 
     zoom: 7
   });
+    const graphicsLayer = new GraphicsLayer();
 
-  const novaduSlanis = new FeatureLayer({
-    //url: "https://services1.arcgis.com/qbu95DaOMntesDTa/arcgis/rest/services/novadi_LV/FeatureServer/0"
-    url:"https://services1.arcgis.com/qbu95DaOMntesDTa/ArcGIS/rest/services/Planotas__Administrativas_teritorijas_2021/FeatureServer/0"
-  });
-
-  const parauguSlanis = new FeatureLayer({
-    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020/FeatureServer/0"
-  }); 
-
-
-  const graphicsLayer = new GraphicsLayer();
-  const graphicsLayer2 = new GraphicsLayer();
-  const graphicsLayer3 = new GraphicsLayer();
+    map.add(parauguSlanis);
+    map.add(aktuSlanis);
     map.add(graphicsLayer);
-    map.add(graphicsLayer2);
-    map.add(graphicsLayer3);
 
-   //const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2021/FeatureServer/0/query";
-  const aktiURL ="https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2021_aug/FeatureServer/0/query";
+  const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Akti/FeatureServer/0/query";
+   //"https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2021_aug/FeatureServer/0/query";
+              
   
   const aktioptions  = {
     responseType: "json",
@@ -56,8 +143,8 @@ require([
       outFields: "Koku_sugas"
     }
   };
-   //const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi2020/FeatureServer/0/query";
-  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi/FeatureServer/0/query";
+
+  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Paraugi/FeatureServer/0/query";
   const paraugiOptions = {
     responseType: "json",
     query: {
@@ -79,23 +166,14 @@ require([
     }        
   };
 
-  const krasuRinda = [[0, 0, 255], [0, 255, 0], [0, 255, 255], [255, 0, 0], [255, 0, 255], [255, 255, 0], [0, 0, 125], [0, 125, 0], [0, 125, 125], [125, 0, 0], [125, 0, 125], [125, 125, 0], [125, 125, 125], [125, 125, 255], [125, 255, 125], [125, 255, 255], [255, 125, 125], [255, 125, 255], [255, 255, 125], [255, 150, 0], [255, 0, 150], [150, 0, 255], [0, 150, 255], [0, 255, 150], [150, 255, 0], [255, 200, 200], [255, 255, 200], [255, 200, 255], [200, 255, 255], [200, 255, 200], [200, 200, 255], [200, 200, 200]];
+  //const krasuRinda = [[0, 0, 255], [0, 255, 0], [0, 255, 255], [255, 0, 0], [255, 0, 255], [255, 255, 0], [0, 0, 125], [0, 125, 0], [0, 125, 125], [125, 0, 0], [125, 0, 125], [125, 125, 0], [125, 125, 125], [125, 125, 255], [125, 255, 125], [125, 255, 255], [255, 125, 125], [255, 125, 255], [255, 255, 125], [255, 150, 0], [255, 0, 150], [150, 0, 255], [0, 150, 255], [0, 255, 150], [150, 255, 0], [255, 200, 200], [255, 255, 200], [255, 200, 255], [200, 255, 255], [200, 255, 200], [200, 200, 255], [200, 200, 200]];
+  const ramp = colorRamps.byName("Point Cloud 3");
+  const krasuRinda = ramp.colors;
 
   const aktuDalasSpecialasLietas = {
     checkboxClassName: "checkboxes",
     checkAllbuttonName: "checkAll",
     uncheckAllbuttonName: "uncheckAll",
-    listButtonName: "toShortList",
-    grafikuslanis: graphicsLayer,
-    oneItemQueryOptions: {
-        responseType: "json",
-        query: {
-          f: "json",
-        //šo jāpieliek vēlāk jo species nav zināms where: `Koku_sugas='${species}'`,
-          returnGeometry: true,
-          outFields: "*",         
-        }
-    },
     listesVieta: "listDiv",
     searchField: "Koku_sugas",
     tips: "akti"
@@ -105,17 +183,6 @@ require([
     checkboxClassName: "checkboxes2",
     checkAllbuttonName: "checkAllparaugi",
     uncheckAllbuttonName: "uncheckAllparaugi",
-    listButtonName: "paraugi",
-    grafikuslanis: graphicsLayer2,
-    oneItemQueryOptions: {
-      responseType: "json",
-      query: {
-        f: "json",
-        //šo jāpieliek vēlāk jo organisms nav zināms where: `Parauga_nr <>'-' AND Kaitīgie_organismi LIKE '%${species}%'`,
-        returnGeometry: true,
-        outFields: "*",          
-      }
-    },
     listesVieta: "listDiv2",
     searchField: "Kaitīgie_organismi",
     tips: "paraugi"
@@ -125,17 +192,6 @@ require([
     checkboxClassName: "checkboxes3",
     checkAllbuttonName: "checkAllpunkti",
     uncheckAllbuttonName: "uncheckAllpunkti",
-    listButtonName: "koki",
-    grafikuslanis: graphicsLayer3,
-    oneItemQueryOptions: {
-      responseType: "json",
-      query: {
-        f: "json",
-        // šo jāpieliek vēlāk jo koks nav zināms where: `Koka_suga='${species}'`,
-        returnGeometry: true,
-        outFields: "*",         
-      }
-    },
     listesVieta: "listDiv3",
     searchField: "Koka_suga",
     tips: "koki"
@@ -146,14 +202,12 @@ require([
     this.checkboxClassName = obj.checkboxClassName;
     this.checkAllbuttonName = obj.checkAllbuttonName;
     this.uncheckAllbuttonName = obj.uncheckAllbuttonName;
-    this.listButtonName = obj.listButtonName;
-    this.grafikuslanis = obj.grafikuslanis;
-    this.oneItemQueryOptions = obj.oneItemQueryOptions;
     this.listesVieta = obj.listesVieta;
     this.searchField = obj.searchField;
     this.tips = obj.tips;
   };
 
+  //paliek
   NewOne.prototype.createSpeciesList = function(array, domElement) {
     //izveido sarakstu ar čekboksiem no piedāvātā saraksta (parametrā array). DomElement ir, kur sarakstu ievietot.  
     for (let j = 0; j < array.length; j++) {       
@@ -163,17 +217,40 @@ require([
       let chk = document.createElement("input");
         chk.type = "checkbox";
         chk.value = array[j];
-      //colorComb - krāsa, lai katrai sugai bumbuļus zīmētu citā krāsā
-      let g = j % krasuRinda.length;
-        chk.colorComb = krasuRinda[g];
         chk.className = this.checkboxClassName;
         listItem.appendChild(chk);
         let lbl = document.createElement("label");
         lbl.textContent = array[j];
         listItem.appendChild(lbl);
+        if (this.tips === "koki") {
+          //colorComb - krāsa, lai katrai sugai bumbuļus zīmētu citā krāsā
+          visiKoki[array[j]] = [];
+          let g = j % krasuRinda.length;
+          chk.colorComb = new Color(krasuRinda[g]);
+          const obj1 = {
+            value: chk.value,
+            symbol: {
+              type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+              size: 7,
+              color: chk.colorComb,
+              outline: {  // autocasts as new SimpleLineSymbol()
+                width: 1,
+                color: "black"
+              }
+            }
+          }
+          paraugValueInfos.push(obj1);
+          parRenderer.uniqueValueInfos = paraugValueInfos;
+          parauguSlanis.renderer = parRenderer;
+        } else if (this.tips === "paraugi") {
+          visiParaugi[array[j]] = [];
+        } else if (this.tips === "akti"){
+          visiAkti[array[j]] = [];
+        }
     }
   };
 
+  //paliek
   NewOne.prototype.checkAllBoxes = function() {
     document.getElementById(this.checkAllbuttonName).addEventListener("click", () => {
       let boxes = document.getElementsByClassName(this.checkboxClassName);
@@ -185,6 +262,7 @@ require([
     });
   };
 
+  //paliek
   NewOne.prototype.uncheckAllBoxes = function() {
     document.getElementById(this.uncheckAllbuttonName).addEventListener("click", () => {
       let boxes = document.getElementsByClassName(this.checkboxClassName);
@@ -196,12 +274,7 @@ require([
     });
   }
 
-  NewOne.prototype.removeSpeciesGraphic = function(species) {
-    let grlist = this.grafikuslanis.graphics.items.filter(e => e.attributes[this.searchField] === species); 
-    for (const gr of grlist) {
-      gr.visible = false;
-    }
-  };
+  //paliek
   NewOne.prototype.dabutSuguSarakstu = function() {
     //funnkcija aizpildīs list this.speciesList
     this.speciesList = [];
@@ -241,7 +314,26 @@ require([
           //back to array from Set
           this.speciesList = [...uniqueSet];
           this.speciesList.sort();
-      } else {
+      } else if (this.tips === "akti") {
+        for (let i=0; i < response.data.features.length; i++) {
+          if (response.data.features[i].attributes[this.searchField]) {
+            this.speciesList.push(response.data.features[i].attributes[this.searchField]);     
+          }
+        }
+        const sugas3 = [];
+        for (const suga of this.speciesList) {
+          const splittedName = suga.split("; ");
+          if (splittedName.length === 1) {
+            sugas3.push(suga);
+          }
+        }
+        this.speciesList = sugas3;
+        this.speciesList.sort();
+        const specList = document.createElement("ol");
+        document.getElementById(this.listesVieta).appendChild(specList);
+        this.checkAllBoxes();
+        this.uncheckAllBoxes();
+      }  else {
         for (let i=0; i < response.data.features.length; i++) {
           if (response.data.features[i].attributes[this.searchField]) {
             this.speciesList.push(response.data.features[i].attributes[this.searchField]);
@@ -254,394 +346,134 @@ require([
       this.createSpeciesList(this.speciesList, specList);
       this.checkAllBoxes();
       this.uncheckAllBoxes();
-      this.chooseSpecies();
+      if (this.tips === "paraugi" || this.tips === "koki"){
+        this.chooseSpecies();
+      }
     });
   };
 
-  NewOne.prototype.addToButton = function() {
-    document.getElementById(this.listButtonName).addEventListener("click", () => {
-      if(this.listButtonName === "toShortList") {
-        document.getElementById("listDiv").innerHTML = "";
-        document.getElementById("virsraksts").textContent = "Atpakaļ uz garo sarakstu var tikt ar refresh";
-        this.grafikuslanis.removeAll();
-        const sugas3 = [];
-        for (const suga of this.speciesList) {
-          const splittedName = suga.split("; ");
-          //console.log(splittedName);
-          if (splittedName.length === 1) {
-            sugas3.push(suga);
-          }
-        }
-        this.speciesList = sugas3;
-        this.speciesList.sort();
-        const specList = document.createElement("ol");
-        document.getElementById(this.listesVieta).appendChild(specList);
-        this.createSpeciesList(this.speciesList, specList);
-        this.checkAllBoxes();
-        this.uncheckAllBoxes();
-        this.chooseSpecies();
-      } else {
-        document.getElementById("labojumi").style.display = "block";
-        this.dabutSuguSarakstu();
+  //mainams
+  const drawGraphics = function(feature, colOR) {
+    // uzzīmēt punktu uz poligona rings pirmā punkta
+    // let point = {
+    //   type: "point", // autocasts as new Point()
+    //   x: feature.x, // 2713841.85385366
+    //   y: feature.y,
+    //   spatialReference: {
+    //     wkid: 3857
+    //   }
+    // }
+
+    // const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
+    
+    let markerSymbol = {
+      type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+      color: colOR,
+      size: 12,
+      outline: {
+        // autocasts as new SimpleLineSymbol()
+        color: [255, 255, 255],
+        width: 1
       }
-    }, {once: true});
-  };
-
-  NewOne.prototype.drawGraphicCreateList = function(species, colOR) {
-    //uzzīmēt grafiku un uztaisīt aktu sarakstu
-    // atlasīt tikai par šo sugu
-    const options2 = this.oneItemQueryOptions;
-    if (this.tips === "akti") {
-      options2.query.where = `Koku_sugas='${species}'`;
-    } else if (this.tips === "paraugi") {
-      options2.query.where = `Parauga_nr <>'-' AND Kaitīgie_organismi LIKE '%${species}%'`
-    } else if (this.tips === "koki") {
-      options2.query.where = `Koka_suga='${species}'`
-    }
-
-    let repList = [];
-    let pointGraphicsArray1 = [];
-    let polygonGraphicsArray1 = [];
-    Request(this.url, options2).then((response) => {
-      r2 = response;
-      let results = response.data.features;
-      //alert(results[0].geometry.rings[0][0][1]);
-      //salasīt aktu numurus (un tagad arī visu ko citu) no rezultātiem, kas ir šai sugai un samest listē replist.
-      for (const feature of results) {
-        let itemData = {};
-        let attributes1;
-        itemData.id = feature.attributes.ObjectId;
-        if (this.tips === "paraugi") {
-          itemData.Akta_nr = feature.attributes.Akta_nr
-          itemData.kaitOrg = feature.attributes.Kaitīgie_organismi;
-          itemData.kokSuga = feature.attributes.Koka_suga;
-          attributes1 = {Kaitīgie_organismi: species};
-          attributes1.visiOrg = itemData.kaitOrg;
-          attributes1.Akta_nr = itemData.Akta_nr;
-          attributes1.kokSuga = itemData.kokSuga;
-          attributes1.id = itemData.id;
-          attributes1.paraugaNr = feature.attributes.Parauga_nr;
-        } else {
-          itemData.Akta_nr = feature.attributes.Akta_nr;
-          attributes1 = feature.attributes;
-          attributes1.id = itemData.id;
-        }
-        if (this.tips === "akti") {
-          // Uzzīmēt poligonu
-          let polygon = {
-            type: "polygon", // autocasts as new Polygon()
-            rings: feature.geometry.rings,
-            spatialReference: {
-            wkid: 3857
-            }       
-          };
+    };
     
-          let fillSymbol = {
-          type: "simple-fill", // autocasts as new SimpleFillSymbol()
-          color: [227, 139, 79, 0.8],
-          outline: {
-            // autocasts as new SimpleLineSymbol()
-            color: [0, 255, 0],
-            width: 6
-          }
-          };
-    
-          let polygonGraphic = new Graphic({
-            geometry: polygon,
-            symbol: fillSymbol,
-            attributes: attributes1
-          });
-        
-          // uzzīmēt punktu uz poligona rings pirmā punkta
-          let point = {
-          type: "point", // autocasts as new Point()
-          x: feature.geometry.rings[0][0][0], // 2713841.85385366
-          y: feature.geometry.rings[0][0][1],
-          spatialReference: {
-            wkid: 3857
-            }       
-          // 7743457.16553558
-          }
-
-          const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
-          attributes1.xCoord = gisPoint.x;
-          attributes1.yCoord = gisPoint.y;
-          itemData.xCoord = gisPoint.x;
-          itemData.yCoord = gisPoint.y;
-    
-          let markerSymbol = {
-            type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-            color: colOR,
-            outline: {
-              // autocasts as new SimpleLineSymbol()
-              color: [0, 0, 0],
-              width: 1
-            }
-          };
-    
-          var pointGraphic = new Graphic({
-            geometry: point,
-            symbol: markerSymbol,
-            attributes: attributes1,
-            popupTemplate: {
-              // autocasts as new PopupTemplate()
-              title: "{Akta_nr}",
-              content: [
-                {
-                  type: "fields",
-                  fieldInfos: [
-                    {
-                      fieldName: "xCoord"
-                    },
-                    {
-                      fieldName: "yCoord"
-                    },
-                    {
-                      fieldName: "Kaitīgie_organismi"
-                    },
-                    {
-                      fieldName: "Koku_sugas"
-                    },
-                    {
-                      fieldName: "novads"
-                    },
-                    {
-                      fieldName: "id"
-                    }
-                  ]
-                }
-              ]
-            }
-          });
-    
-          pointGraphicsArray1.push(pointGraphic);
-          polygonGraphicsArray1.push(polygonGraphic);
-
-        } else if (this.tips === "paraugi") {
-          let point = {
-            type: "point", // autocasts as new Point()
-            x: feature.geometry.x,
-            y: feature.geometry.y,
-            spatialReference: {
-              wkid: 3857
-              }       
-          }
-
-          const gisPoint = webMercatorUtils.webMercatorToGeographic(point);
-          itemData.xCoord = gisPoint.x;
-          itemData.yCoord = gisPoint.y;
-          attributes1.xCoord = itemData.xCoord;
-          attributes1.yCoord = itemData.yCoord;
-
-          let markerSymbol = {
-            type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-            color: colOR,
-            outline: {
-              // autocasts as new SimpleLineSymbol()
-              color: [255, 0, 0],
-              width: 2
-            }
-          };
-    
-          var pointGraphic = new Graphic({
-            geometry: point,
-            symbol: markerSymbol,
-            attributes: attributes1,
-            popupTemplate: {
-              // autocasts as new PopupTemplate()
-              title: "{paraugaNr}",
-              content: [
-                {
-                  type: "fields",
-                  fieldInfos: [
-                    {
-                      fieldName: "xCoord"
-                    },
-                    {
-                      fieldName: "yCoord"
-                    },
-                    {
-                      fieldName: "visiOrg"
-                    },
-                    {
-                      fieldName: "kokSuga"
-                    },
-                    {
-                      fieldName: "novads"
-                    },
-                    {
-                      fieldName: "id"
-                    }
-                  ]
-                }
-              ]
-            }
-          });
-          pointGraphicsArray1.push(pointGraphic);
-        } else if (this.tips === "koki") {
-          let point = {
-            type: "point", // autocasts as new Point()
-            x: feature.geometry.x,
-            y: feature.geometry.y,
-            spatialReference: {
-              wkid: 3857
-              }       
-          }
-    
-          let gisPoint = webMercatorUtils.webMercatorToGeographic(point);
-          attributes1.xCoord = gisPoint.x;
-          attributes1.yCoord = gisPoint.y;
-          itemData.xCoord = gisPoint.x;
-          itemData.yCoord = gisPoint.y;
-
-          let markerSymbol = {
-            type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-            color: colOR,
-            outline: {
-              // autocasts as new SimpleLineSymbol()
-              color: [0, 125, 255],
-              width: 2
-            }
-          };
-    
-          let pointGraphic = new Graphic({
-            geometry: point,
-            symbol: markerSymbol,
-            attributes: attributes1,
-            popupTemplate: {
-              // autocasts as new PopupTemplate()
-              title: "{Akta_nr}",
-              content: [
-                {
-                  type: "fields",
-                  fieldInfos: [
-                    {
-                      fieldName: "xCoord"
-                    },
-                    {
-                      fieldName: "yCoord"
-                    },
-                    {
-                      fieldName: "Koka_suga"
-                    },
-                    {
-                      fieldName: "novads"
-                    },
-                    {
-                      fieldName: "id"
-                    }
-                  ]
-                }
-              ]
-            }
-          });
-    
-          //push graphics into arrray
-          pointGraphicsArray1.push(pointGraphic);
-        }
-        repList.push(itemData);
-      }
-      return pointGraphicsArray1;
-    }).then((returnedArray) => {
-
-      let queryPromisesArray = returnedArray.map((gra) => {
-        let novadiQuery = {
-          geometry: gra.geometry,
-          spatialRelationship: "intersects",
-          outFields: "NOSAUKUMS",
-          returnGeometry: false,
-          where: "1=1"
-        };
-        return novaduSlanis.queryFeatures(novadiQuery); 
-      });
-        return queryPromisesArray;
-    }).then((array)=> {
-      // queryfeatures ir promise
-    return Promise.all(array);
-    }).then((resolvedArray) => {
-        let novaduListe = resolvedArray.map((el) => {
-          if (el.features.length > 0 && el.features[0].attributes.NOSAUKUMS) {
-            return el.features[0].attributes.NOSAUKUMS;
-          } else {
-            return "novads neatradās";
-          }
-      });
-
-        pointGraphicsArray1.forEach((gra, index) => {
-          const nov = novaduListe[index];
-          gra.attributes.novads = nov;
-        });
-
-        repList.forEach((item, index) => {
-          const nov = novaduListe[index];
-          item.novads = nov;
-        });
-        // izveido aktu sarakstu
-        //pievieno objektam, piemēram aktuObjekts."Erwinia amylovora" = ["102-AKA-223-20", 094-AKA-213-20 utt]
-        this[species] = repList;
-        let listDiv = document.getElementById(this.listesVieta);
-        let labelList = listDiv.getElementsByTagName("label");
-        // sameklē visas labels un ieķeksētajai atbilstošajā listItem (tajā, kur atrodas čekbokss un label) izveido jaunu div elementu
-        for (const label of labelList) {
-          if (label.textContent === species) {
-            let parentNode = label.parentNode;
-            let aktiDiv = document.createElement("div");
-
-            aktiDiv.className = "akti";
-            parentNode.appendChild(aktiDiv);
-            label.addEventListener("click", (e) => {
-              for (const el of this[species]) {
-                //katram no aktu numuriem izveido savu p
-                let p = document.createElement("p");
-                            // no šejienes jāsāk skatīties
-                  p.textContent = `${el.xCoord}; ${el.yCoord}; ${el.novads}; ${el.Akta_nr}; ${el.id}`;
-                aktiDiv.appendChild(p);
+    let pointGraphic = new Graphic({
+      geometry: feature.point,
+      symbol: markerSymbol,
+      attributes: feature.attributes,
+      popupTemplate: {
+        // autocasts as new PopupTemplate()
+        title: "{Akta_nr}",
+        content: [
+          {
+            type: "fields",
+            fieldInfos: [
+              {
+                fieldName: "Koku_sugas"
+              },
+              {
+                fieldName: "ObjectId"
+              },
+              {
+                fieldName: "lon"
+              },
+              {
+                fieldName: "lat"
               }
-              e.target.addEventListener("click", () => {
-                let divs = label.parentNode.getElementsByTagName("div");
-                let div1 = divs[0];
-                if (div1.style.display === "none") {
-                  div1.style.display = "block";
-                } else {
-                  div1.style.display = "none";
-                  }
-              });
-            }, {once:true});
+            ]
           }
-        }
-        //add graphics to map
-        pointGraphicsArray1.forEach((gr) => {
-          this.grafikuslanis.add(gr);
-        });
-        if (polygonGraphicsArray1 && polygonGraphicsArray1.length > 0) {
-          polygonGraphicsArray1.forEach((gr) => {
-            this.grafikuslanis.add(gr);
-          });
-        }
-      });
-  };
+        ]
+      },
+      visible: false
+    });
+    graphicsLayer.add(pointGraphic);
+  }
 
+  //gatavs
   NewOne.prototype.chooseSpecies = function() {
-    //lai ieķeksējot tiktu palaista tālāk grafikas uzzīmēšana uz kartes un aktu saraksta izveidošana un izķeksējot - grafiku no kartes noņem
+    //lai ieķeksējot grafikas parādītos uz kartes un aktu saraksta izveidošana un izķeksējot - grafiku no kartes noņem
     let checkboxes = document.getElementsByClassName(this.checkboxClassName);
       for (const el of checkboxes) {
           el.addEventListener("change", () => {
+            const selectedValue = el.value;            
             if (el.checked) {
-              // atrast grafikas, kuras ieķeksētajai sugai (el.value) jau ir uzzzīmētas
-              let grlist = this.grafikuslanis.graphics.items.filter(e => e.attributes[this.searchField] === el.value);
-              // ja ir uzzīmētas - parādīt (visibility)
-              if (grlist.length > 0) {  
-                for (const gr of grlist) {
-                gr.visible = true;
-                }
-              } else {
-                //ja nav uzzīmētas - uzzīmēt piesaisītājā krāsā (el.colorcomb) (un izveidot aktu sarakstu)
-                this.drawGraphicCreateList(el.value, el.colorComb);
-                }
-            } else {
-              // remove species graphic
-              this.removeSpeciesGraphic(el.value);
+              if (this.tips === "koki"){
+                selectedKokItems.push(selectedValue);
+              } else if (this.tips === "paraugi"){
+                selectedOrgItems.push(selectedValue);
+              } else if (this.tips === "akti"){
+                selectedAktItems.push(selectedValue);
               }
+            } else {
+              if (this.tips === "koki"){
+                const index1 = selectedKokItems.indexOf(selectedValue);
+                if (index1 > -1) { // only splice array when item is found
+                  selectedKokItems.splice(index1, 1); // 2nd parameter means remove one item only
+                } 
+              } else if (this.tips === "paraugi"){
+                const index1 = selectedOrgItems.indexOf(selectedValue);
+                if (index1 > -1) { // only splice array when item is found
+                  selectedOrgItems.splice(index1, 1); // 2nd parameter means remove one item only
+                } 
+              } else if (this.tips === "akti"){
+                const index1 = selectedAktItems.indexOf(selectedValue);
+                if (index1 > -1) { // only splice array when item is found
+                  selectedAktItems.splice(index1, 1); // 2nd parameter means remove one item only
+                } 
+              }
+            }
+            if (this.tips === "akti") {
+                const grlist = graphicsLayer.graphics.items.filter(e => selectedAktItems.indexOf(e.attributes.Koku_sugas) > -1);
+                for (const gr of grlist) {
+                  gr.visible = true;
+                }
+                const negList = graphicsLayer.graphics.items.filter(e => selectedAktItems.indexOf(e.attributes.Koku_sugas) < 0);
+                for (const gr of negList) {
+                  gr.visible = false;
+                }
+
+             } else if (this.tips === "paraugi") {
+                if (selectedOrgItems.length === 0){
+                  punktiLayerView.filter = {
+                    where: "1=2"
+                  }
+                } else {
+                  const selectedLongOrgItems = [];
+                  for (let org of selectedOrgItems) {
+                    let str = `Parauga_nr <>'-' AND Kaitīgie_organismi LIKE '%${org}%'`;
+                    selectedLongOrgItems.push(str);
+                  }
+                  const selectedOrgValues = selectedLongOrgItems.join(" OR ");
+                  punktiLayerView.filter = {
+                    where: selectedOrgValues
+                  }
+                }
+             } else if (this.tips === "koki") {
+               const selectedPointValues = selectedKokItems.join("', '"); 
+               punktiLayerView.filter = {
+                 where: `Koka_suga IN ('${selectedPointValues}')`
+               }
+             }            
           });
       }
   }
@@ -656,11 +488,10 @@ require([
   parauguObjekts.options = paraugiOptions;
   kokuObjekts.options = kokiOptions;
   aktuObjekts.dabutSuguSarakstu();
-  aktuObjekts.addToButton();
-  parauguObjekts.addToButton();
-  kokuObjekts.addToButton();
+  parauguObjekts.dabutSuguSarakstu();
+  kokuObjekts.dabutSuguSarakstu();
 
-
+  
   //Tālāk viss labošanai  
   //notīrīt ailes
   const notiritAiles = function() {
@@ -749,7 +580,7 @@ require([
       const noAilemNolasitais = createNewFeatureObj();
       const punkts = createNewFeature1(noAilemNolasitais);
       punkts.attributes.ObjectId = res.data.features[0].attributes.ObjectId;
-      //console.log(punkts);
+
       const edits = {
         updateFeatures: [punkts]
       };
@@ -900,4 +731,208 @@ require([
       } 
     });
   });
+
+
+  // Te beidzas labošana un sākas pamata lietas, kas notiek lapai ielādējoties
+  view.whenLayerView(parauguSlanis).then((layerView) => {
+    reactiveUtils.whenOnce(() => !layerView.updating).then(() => {
+
+        // ar šo var sākt domāt par tabulu
+        punktiLayerView.queryFeatures({
+          //geometry: view.extent, te var ielikt no - līdz
+          returnGeometry: true
+        })
+        .then(function(results) {
+          // do something with the resulting graphics
+          rawPointObj = results.features;
+          rawPointObj.forEach((elem) => {
+            const obj2 = {};
+            obj2.attributes = elem.attributes;
+            obj2.latitude = elem.geometry.latitude;
+            obj2.longitude = elem.geometry.longitude;
+            for (const item in visiKoki){
+              if(elem.attributes.Koka_suga === item){
+                visiKoki[item].push(obj2);
+              }
+            }
+            if (elem.attributes["Kaitīgie_organismi"]) {
+              for (const item in visiParaugi){
+                const orgRinda = elem.attributes["Kaitīgie_organismi"];
+                if(orgRinda.includes(item)){
+                  visiParaugi[item].push(obj2);
+                }
+              }
+            }
+          });
+          console.log("objects are ready");
+          const listDivKoki = document.getElementById(kokuObjekts.listesVieta);
+          const labelListKoki = listDivKoki.getElementsByTagName("label");
+          for (const lab of labelListKoki){
+            for (const koksElem in visiKoki){
+              if (koksElem === lab.textContent){
+                const parentNode = lab.parentNode;
+                const aktiDiv = document.createElement("div");
+                aktiDiv.className = "akti";
+                parentNode.appendChild(aktiDiv);
+                lab.addEventListener("click", (e) => {
+                  for (const el of visiKoki[koksElem]) {
+                    //katram no aktu numuriem izveido savu p
+                    let p = document.createElement("p");
+                    p.textContent = `${el.longitude}; ${el.latitude}; ${el.attributes.Akta_nr}; ${el.attributes.ObjectId};`;
+                    aktiDiv.appendChild(p);
+                  }
+                  e.target.addEventListener("click", () => {
+                    let divs = lab.parentNode.getElementsByTagName("div");
+                    let div1 = divs[0];
+                    if (div1.style.display === "none") {
+                      div1.style.display = "block";
+                    } else {
+                      div1.style.display = "none";
+                      }
+                  });
+                }, {once:true});                
+              }
+            }
+          }
+          console.log("koki section is ready");
+          document.getElementById("kokipz").textContent = "Koki gatavi";
+          const listDivParaugi = document.getElementById(parauguObjekts.listesVieta);
+          const labelListParaugi = listDivParaugi.getElementsByTagName("label");
+          for (const lab of labelListParaugi){
+            for (const parElem in visiParaugi){
+              if (parElem.includes(lab.textContent)){
+                const parentNode = lab.parentNode;
+                const aktiDiv = document.createElement("div");
+                aktiDiv.className = "akti";
+                parentNode.appendChild(aktiDiv);
+                lab.addEventListener("click", (e) => {
+                  for (const el of visiParaugi[parElem]) {
+                    //katram no aktu numuriem izveido savu p
+                    let p = document.createElement("p");
+                    p.textContent = `${el.longitude}; ${el.latitude}; ${el.attributes.Akta_nr}; ${el.attributes.Parauga_nr}; ${el.attributes["Kaitīgie_organismi"]} ${el.attributes.ObjectId};`;
+                    aktiDiv.appendChild(p);
+                  }
+                  e.target.addEventListener("click", () => {
+                    let divs = lab.parentNode.getElementsByTagName("div");
+                    let div1 = divs[0];
+                    if (div1.style.display === "none") {
+                      div1.style.display = "block";
+                    } else {
+                      div1.style.display = "none";
+                      }
+                  });
+                }, {once:true});                
+              }
+            }
+          }
+          console.log("paraugi section is ready");
+          document.getElementById("paraugipz").textContent = "Paraugi gatavi";         
+        }); // te beidzas falseOnce       
+      });
+
+    layerView.watch("updating", function(value) { /// !!!
+      if (!value) {       
+        punktiLayerView = layerView;
+      }
+    });
+  });
+
+  view.whenLayerView(aktuSlanis).then((layerView) => {
+    reactiveUtils.whenOnce(() => !layerView.updating).then(() => {
+      aktiLayerView = layerView;
+      // // Create a polygon geometry
+      // const searchPolygon =  {
+      //    type: "polygon",
+      //    rings: [
+      //        [20.022043281075064, 58.05613729276323], //Longitude, latitude
+      //        [28.869307221929557,58.365948114663254], //Longitude, latitude
+      //        [28.8487388472691, 55.39817672169094], //Longitude, latitude
+      //        [19.988682779392573, 55.36691368749911],   //Longitude, latitude
+      //        [20.022043281075064, 58.05613729276323]  //Longitude, latitude
+      //    ],
+      //    spatialReference: {
+      //     wkid: 4326
+      //    }
+      // };
+      aktiLayerView.queryFeatures({
+          //geometry: searchPolygon,
+          returnGeometry: true
+        }).then(function(results) {
+          rawPolyObj = results.features
+          const hidePolygons = document.getElementById("clearPolyg");
+          hidePolygons.addEventListener("click", () => {
+            aktiLayerView.visible ? aktiLayerView.visible = false : aktiLayerView.visible = true;
+          });
+          rawPolyObj.forEach((elem) => {
+            const obj3 = {};
+            for (const item in visiAkti){
+              if ((elem.attributes.Koku_sugas === item) && (elem.geometry.rings.length > 0)){
+                const x1 = elem.geometry.rings[0][0][0];
+                const y1 = elem.geometry.rings[0][0][1];
+                obj3.attributes = elem.attributes;
+                const pointt = {
+                  type: "point", // autocasts as new Point()
+                  x: x1, // 2713841.85385366
+                  y: y1,
+                  spatialReference: {
+                    wkid: 3857
+                  }
+                }
+                obj3.point = pointt;
+                const gisPoint = webMercatorUtils.webMercatorToGeographic(pointt);
+                obj3.attributes.lon = gisPoint.x;
+                obj3.attributes.lat = gisPoint.y;
+                visiAkti[item].push(obj3);
+              }
+            }
+          });
+          const listDivAkti = document.getElementById(aktuObjekts.listesVieta);
+          const labelListAkti = listDivAkti.getElementsByTagName("label");
+          for (const lab of labelListAkti){
+            for (const aktsElem in visiAkti){
+              if (aktsElem === lab.textContent){
+                const parentNode = lab.parentNode;
+                const aktiDiv = document.createElement("div");
+                aktiDiv.className = "akti";
+                parentNode.appendChild(aktiDiv);
+                lab.addEventListener("click", (e) => {
+                  for (const el of visiAkti[aktsElem]) {
+                    //katram no aktu numuriem izveido savu p
+                    let p = document.createElement("p");
+                    p.textContent = `${el.attributes.lon}; ${el.attributes.lat}; ${el.attributes.Akta_nr}; ${el.attributes.ObjectId};`;
+                    aktiDiv.appendChild(p);
+                  }
+                  e.target.addEventListener("click", () => {
+                    let divs = lab.parentNode.getElementsByTagName("div");
+                    let div1 = divs[0];
+                    if (div1.style.display === "none") {
+                      div1.style.display = "block";
+                    } else {
+                      div1.style.display = "none";
+                      }
+                  });
+                }, {once:true});                
+              }
+            }
+          }
+           // Sazīmēt punktus uz rings[0][0][0]
+          let colorCounter = 1;
+          for (let key in visiAkti){
+            const collor = new Color(krasuRinda[colorCounter]);
+              colorCounter +=1;
+              if (colorCounter > krasuRinda.length){
+                colorCounter = 0;
+              }
+              for (let elem of visiAkti[key]){
+                drawGraphics(elem, collor);
+              }
+          }
+           aktuObjekts.chooseSpecies();
+          console.log("aktu slānis gatavs");
+          document.getElementById("aktipz").textContent = "Akti gatavi";
+        }); // te beidzas falseOnce       
+      });
+  });
+
 });
+

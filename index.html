@@ -29,8 +29,8 @@
       }
 
       #viewDiv {
-        height: 50vh;
-        width: 50vw;
+        height: 70vh;
+        width: 70vw;
         }
 
       #labojumi {
@@ -41,13 +41,22 @@
         z-index: 100;
       }
 
+      #zinojumi {
+        position: fixed;
+        width:200px;
+        right: 20px;
+        top: 200px;
+        background:rgb(168, 192, 47);
+        z-index: 90;
+      }
+
     </style>
     <link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css">
-    <script src="https://js.arcgis.com/4.14/"></script>
+    <script src="https://js.arcgis.com/4.24/"></script>
     
   </head>
   <body>
-    <div id ="labojumi" style="display:none">
+    <div id ="labojumi">
       <h3>Labošanai, pievienošanai un nodzēšanai</h3>
       <h5>Tikai koku un paraugu slānim</h5>
       <div id = "labojumuAugsa">
@@ -82,6 +91,11 @@
         <br>
       </div>
     </div>
+    <div id="zinojumi">
+      <h5 id="paraugipz"></h5>
+      <h5 id="kokipz"></h5>
+      <h5 id="aktipz"></h5>
+    </div>
   <table>
     <tr id="maprow">
       <td id="forMap" colspan="3">
@@ -92,18 +106,16 @@
     <tr id="textrow">
       <td id="forAkti">
         <div id="textDiv">
-          <h5>Izmantota SIA Envirotech Latvijas novadu karte</h5>
-          <h1 id="virsraksts">Te meklēt aktus, kuros ir platības pārbaude </h1>
-          <button type="button" id="checkAll">Check all</button>
-          <button type="button" id="uncheckAll">Uncheck all</button>
-          <button type="button" id="toShortList">Īsais saraksts</button>
+          <h4 id="virsraksts">Platības apsekojums </h4>
+          <button type="button" id="checkAll">Ieķeksēt visus</button>
+          <button type="button" id="uncheckAll">Noņemt visus</button>
+          <button type="button" id="clearPolyg">Noņemt/rādīt platības</button>
           <div id="listDiv"></div>
         </div>
       </td>
       <td id="forParaugi">
         <div id="paraugiTextDiv">
-          <h1 id="virsraksts2">Te meklēt aktus, kuros ir paraugs uz kādu no šiem organismiem</h1>
-          <button type="button" id="paraugi">Parādīt organismus</button>
+          <h4 id="virsraksts2">Akti ar paraugiem</h4>
           <button type="button" id="checkAllparaugi">Ieķeksēt visus</button>
           <button type="button" id="uncheckAllparaugi">Noņemt visus</button>
           <div id="listDiv2"></div>
@@ -111,8 +123,7 @@
       </td>
       <td id="forParbauzuPunkti">
         <div id="punktiTextDiv">
-          <h1 id="virsraksts3">Te meklēt aktus, kuros ir pārbaudīti šie koki (bez platības)</h1>
-          <button type="button" id="koki">Parādīt kokus</button>
+          <h4 id="virsraksts3">Koku pārbaudes (bez platības)</h4>
           <button type="button" id="checkAllpunkti">Ieķeksēt visus</button>
           <button type="button" id="uncheckAllpunkti">Noņemt visus</button>
           <div id="listDiv3"></div>
