@@ -323,7 +323,7 @@ require([
         const sugas3 = [];
         for (const suga of this.speciesList) {
           const splittedName = suga.split("; ");
-          if (splittedName.length === 1) {
+          if (splittedName.length === 1 || splittedName.length === 2) {
             sugas3.push(suga);
           }
         }
@@ -840,24 +840,12 @@ require([
   view.whenLayerView(aktuSlanis).then((layerView) => {
     reactiveUtils.whenOnce(() => !layerView.updating).then(() => {
       aktiLayerView = layerView;
-      // // Create a polygon geometry
-      // const searchPolygon =  {
-      //    type: "polygon",
-      //    rings: [
-      //        [20.022043281075064, 58.05613729276323], //Longitude, latitude
-      //        [28.869307221929557,58.365948114663254], //Longitude, latitude
-      //        [28.8487388472691, 55.39817672169094], //Longitude, latitude
-      //        [19.988682779392573, 55.36691368749911],   //Longitude, latitude
-      //        [20.022043281075064, 58.05613729276323]  //Longitude, latitude
-      //    ],
-      //    spatialReference: {
-      //     wkid: 4326
-      //    }
-      // };
-      aktiLayerView.queryFeatures({
-          //geometry: searchPolygon,
-          returnGeometry: true
-        }).then(function(results) {
+
+      // aktiLayerView.queryFeatures({
+      //     //geometry: searchPolygon,
+      //     returnGeometry: true
+      //   })
+      aktuSlanis.queryFeatures().then(function(results) {
           rawPolyObj = results.features
           const hidePolygons = document.getElementById("clearPolyg");
           hidePolygons.addEventListener("click", () => {
