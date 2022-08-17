@@ -323,7 +323,7 @@ require([
         const sugas3 = [];
         for (const suga of this.speciesList) {
           const splittedName = suga.split("; ");
-          if (splittedName.length === 1 || splittedName.length === 2) {
+          if (splittedName.length === 1 || splittedName.length === 2 || splittedName.length === 3) {
             sugas3.push(suga);
           }
         }
