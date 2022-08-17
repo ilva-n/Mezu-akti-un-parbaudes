@@ -755,7 +755,7 @@ require([
                 visiKoki[item].push(obj2);
               }
             }
-            if (elem.attributes["Kaitīgie_organismi"]) {
+            if (elem.attributes["Kaitīgie_organismi"] && elem.attributes.Parauga_nr !== "-") {
               for (const item in visiParaugi){
                 const orgRinda = elem.attributes["Kaitīgie_organismi"];
                 if(orgRinda.includes(item)){
