@@ -3,8 +3,7 @@ let aktuObjekts;
 let parauguObjekts;
 let kokuObjekts;
 let r;
-let r2;
-let rawPointObj;
+let rawPointObj = [];
 let rawPolyObj
 const visiKoki = {};
 const visiAkti = {};
@@ -478,6 +477,91 @@ require([
       }
   }
 
+  const getReadyPointData = function(array){
+    array.forEach((elem) => {
+      const obj2 = {};
+      obj2.attributes = elem.attributes;
+      obj2.latitude = elem.geometry.latitude;
+      obj2.longitude = elem.geometry.longitude;
+      for (const item in visiKoki){
+        if(elem.attributes.Koka_suga === item){
+          visiKoki[item].push(obj2);
+        }
+      }
+      if (elem.attributes["Kaitīgie_organismi"] && elem.attributes.Parauga_nr !== "-") {
+        for (const item in visiParaugi){
+          const orgRinda = elem.attributes["Kaitīgie_organismi"];
+          if(orgRinda.includes(item)){
+            visiParaugi[item].push(obj2);
+          }
+        }
+      }
+    });
+    console.log("objects are ready");
+    const listDivKoki = document.getElementById(kokuObjekts.listesVieta);
+    const labelListKoki = listDivKoki.getElementsByTagName("label");
+    for (const lab of labelListKoki){
+      for (const koksElem in visiKoki){
+        if (koksElem === lab.textContent){
+          const parentNode = lab.parentNode;
+          const aktiDiv = document.createElement("div");
+          aktiDiv.className = "akti";
+          parentNode.appendChild(aktiDiv);
+          lab.addEventListener("click", (e) => {
+            for (const el of visiKoki[koksElem]) {
+              //katram no aktu numuriem izveido savu p
+              let p = document.createElement("p");
+              p.textContent = `${el.longitude}; ${el.latitude}; ${el.attributes.Akta_nr}; ${el.attributes.ObjectId};`;
+              aktiDiv.appendChild(p);
+            }
+            e.target.addEventListener("click", () => {
+              let divs = lab.parentNode.getElementsByTagName("div");
+              let div1 = divs[0];
+              if (div1.style.display === "none") {
+                div1.style.display = "block";
+              } else {
+                div1.style.display = "none";
+                }
+            });
+          }, {once:true});                
+        }
+      }
+    }
+    console.log("koki section is ready");
+    document.getElementById("kokipz").textContent = "Koki gatavi";
+    const listDivParaugi = document.getElementById(parauguObjekts.listesVieta);
+    const labelListParaugi = listDivParaugi.getElementsByTagName("label");
+    for (const lab of labelListParaugi){
+      for (const parElem in visiParaugi){
+        if (parElem.includes(lab.textContent)){
+          const parentNode = lab.parentNode;
+          const aktiDiv = document.createElement("div");
+          aktiDiv.className = "akti";
+          parentNode.appendChild(aktiDiv);
+          lab.addEventListener("click", (e) => {
+            for (const el of visiParaugi[parElem]) {
+              //katram no aktu numuriem izveido savu p
+              let p = document.createElement("p");
+              p.textContent = `${el.longitude}; ${el.latitude}; ${el.attributes.Akta_nr}; ${el.attributes.Parauga_nr}; ${el.attributes["Kaitīgie_organismi"]} ${el.attributes.ObjectId};`;
+              aktiDiv.appendChild(p);
+            }
+            e.target.addEventListener("click", () => {
+              let divs = lab.parentNode.getElementsByTagName("div");
+              let div1 = divs[0];
+              if (div1.style.display === "none") {
+                div1.style.display = "block";
+              } else {
+                div1.style.display = "none";
+                }
+            });
+          }, {once:true});                
+        }
+      }
+    }
+    console.log("paraugi section is ready");
+    document.getElementById("paraugipz").textContent = "Paraugi gatavi";         
+  };
+
   aktuObjekts = new NewOne(aktuDalasSpecialasLietas);
   parauguObjekts = new NewOne(parauguDalasSpecialasLietas);
   kokuObjekts = new NewOne(kokuDalasSpecialasLietas);
@@ -735,101 +819,43 @@ require([
 
   // Te beidzas labošana un sākas pamata lietas, kas notiek lapai ielādējoties
   view.whenLayerView(parauguSlanis).then((layerView) => {
-    reactiveUtils.whenOnce(() => !layerView.updating).then(() => {
-
-        // ar šo var sākt domāt par tabulu
-        punktiLayerView.queryFeatures({
-          //geometry: view.extent, te var ielikt no - līdz
-          returnGeometry: true
-        })
-        .then(function(results) {
-          // do something with the resulting graphics
-          rawPointObj = results.features;
-          rawPointObj.forEach((elem) => {
-            const obj2 = {};
-            obj2.attributes = elem.attributes;
-            obj2.latitude = elem.geometry.latitude;
-            obj2.longitude = elem.geometry.longitude;
-            for (const item in visiKoki){
-              if(elem.attributes.Koka_suga === item){
-                visiKoki[item].push(obj2);
+      parauguSlanis.queryObjectIds().then((ids)=>{
+        const max = ids.length;
+        const query = parauguSlanis.createQuery();
+        query.returnGeometry = true;
+        query.outFields = ["Parauga_nr","Akta_nr", "Koka_suga", "Kaitīgie_organismi", "ObjectId"];
+        const idCountFactor = Math.ceil(ids.length/2000);
+        for (let f = 0; f < idCountFactor; f++){
+          let k1 = ids[f * 2000];
+          let k2 = ids[(f + 1) * 2000];
+          if (f < idCountFactor-1){
+            // nav ne jausmas, kāpēc query jāveido katrā reizē no jauna, bet bez tā sagāja viss dēlī
+            const query = parauguSlanis.createQuery();
+            query.returnGeometry = true;
+            query.outFields = ["Parauga_nr","Akta_nr", "Koka_suga", "Kaitīgie_organismi", "ObjectId"];            
+            query.where = `ObjectId >= ${k1} and ObjectId < ${k2}`
+            parauguSlanis.queryFeatures(query).then(function(results){
+              rawPointObj = rawPointObj.concat(results.features);
+              if(rawPointObj.length === ids.length){
+                console.log("paraugi paraugi paraugi", rawPointObj.length);
+                getReadyPointData(rawPointObj);
               }
-            }
-            if (elem.attributes["Kaitīgie_organismi"] && elem.attributes.Parauga_nr !== "-") {
-              for (const item in visiParaugi){
-                const orgRinda = elem.attributes["Kaitīgie_organismi"];
-                if(orgRinda.includes(item)){
-                  visiParaugi[item].push(obj2);
-                }
+            });
+          } else {
+            const query = parauguSlanis.createQuery();
+            query.returnGeometry = true;
+            query.outFields = ["Parauga_nr","Akta_nr", "Koka_suga", "Kaitīgie_organismi", "ObjectId"];            
+            query.where = `ObjectId >= ${k1} and ObjectId <= ${max}`
+            parauguSlanis.queryFeatures(query).then(function(results){
+              rawPointObj = rawPointObj.concat(results.features);
+              if(rawPointObj.length === ids.length){
+                console.log("paraugi paraugi paraugi", rawPointObj.length);
+                getReadyPointData(rawPointObj);
               }
-            }
-          });
-          console.log("objects are ready");
-          const listDivKoki = document.getElementById(kokuObjekts.listesVieta);
-          const labelListKoki = listDivKoki.getElementsByTagName("label");
-          for (const lab of labelListKoki){
-            for (const koksElem in visiKoki){
-              if (koksElem === lab.textContent){
-                const parentNode = lab.parentNode;
-                const aktiDiv = document.createElement("div");
-                aktiDiv.className = "akti";
-                parentNode.appendChild(aktiDiv);
-                lab.addEventListener("click", (e) => {
-                  for (const el of visiKoki[koksElem]) {
-                    //katram no aktu numuriem izveido savu p
-                    let p = document.createElement("p");
-                    p.textContent = `${el.longitude}; ${el.latitude}; ${el.attributes.Akta_nr}; ${el.attributes.ObjectId};`;
-                    aktiDiv.appendChild(p);
-                  }
-                  e.target.addEventListener("click", () => {
-                    let divs = lab.parentNode.getElementsByTagName("div");
-                    let div1 = divs[0];
-                    if (div1.style.display === "none") {
-                      div1.style.display = "block";
-                    } else {
-                      div1.style.display = "none";
-                      }
-                  });
-                }, {once:true});                
-              }
-            }
+            })
           }
-          console.log("koki section is ready");
-          document.getElementById("kokipz").textContent = "Koki gatavi";
-          const listDivParaugi = document.getElementById(parauguObjekts.listesVieta);
-          const labelListParaugi = listDivParaugi.getElementsByTagName("label");
-          for (const lab of labelListParaugi){
-            for (const parElem in visiParaugi){
-              if (parElem.includes(lab.textContent)){
-                const parentNode = lab.parentNode;
-                const aktiDiv = document.createElement("div");
-                aktiDiv.className = "akti";
-                parentNode.appendChild(aktiDiv);
-                lab.addEventListener("click", (e) => {
-                  for (const el of visiParaugi[parElem]) {
-                    //katram no aktu numuriem izveido savu p
-                    let p = document.createElement("p");
-                    p.textContent = `${el.longitude}; ${el.latitude}; ${el.attributes.Akta_nr}; ${el.attributes.Parauga_nr}; ${el.attributes["Kaitīgie_organismi"]} ${el.attributes.ObjectId};`;
-                    aktiDiv.appendChild(p);
-                  }
-                  e.target.addEventListener("click", () => {
-                    let divs = lab.parentNode.getElementsByTagName("div");
-                    let div1 = divs[0];
-                    if (div1.style.display === "none") {
-                      div1.style.display = "block";
-                    } else {
-                      div1.style.display = "none";
-                      }
-                  });
-                }, {once:true});                
-              }
-            }
-          }
-          console.log("paraugi section is ready");
-          document.getElementById("paraugipz").textContent = "Paraugi gatavi";         
-        }); // te beidzas falseOnce       
-      });
-
+        }
+      }).catch((e)=>{console.log(e)})
     layerView.watch("updating", function(value) { /// !!!
       if (!value) {       
         punktiLayerView = layerView;
@@ -840,11 +866,6 @@ require([
   view.whenLayerView(aktuSlanis).then((layerView) => {
     reactiveUtils.whenOnce(() => !layerView.updating).then(() => {
       aktiLayerView = layerView;
-
-      // aktiLayerView.queryFeatures({
-      //     //geometry: searchPolygon,
-      //     returnGeometry: true
-      //   })
       aktuSlanis.queryFeatures().then(function(results) {
           rawPolyObj = results.features
           const hidePolygons = document.getElementById("clearPolyg");
@@ -918,7 +939,7 @@ require([
            aktuObjekts.chooseSpecies();
           console.log("aktu slānis gatavs");
           document.getElementById("aktipz").textContent = "Akti gatavi";
-        }); // te beidzas falseOnce       
+        });      
       });
   });
 
