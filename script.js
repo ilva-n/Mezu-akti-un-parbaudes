@@ -99,13 +99,15 @@ require([
   });
 
   const parauguSlanis = new FeatureLayer({
-    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Paraugi/FeatureServer",
+    //url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Paraugi/FeatureServer",
+    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi_gatavais/FeatureServer/0",
     outFields: ["*"],
     popupTemplate: punktTemplate
   });
   
   const aktuSlanis = new FeatureLayer({
-    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Akti/FeatureServer/0",
+    //url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Akti/FeatureServer/0",
+    url: "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti1/FeatureServer/0",
     renderer: aktRenderer1,
     outFields: ["Akta_nr", "Koku_sugas", "ObjectId", "Pārbaudes_datums"],
     popupTemplate: aktTemplate
@@ -128,7 +130,8 @@ require([
     map.add(aktuSlanis);
     map.add(graphicsLayer);
 
-  const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Akti/FeatureServer/0/query";
+  const aktiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti1/FeatureServer/0/query";
+  //"https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Akti/FeatureServer/0/query";
    //"https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_akti2021_aug/FeatureServer/0/query";
               
   
@@ -143,7 +146,8 @@ require([
     }
   };
 
-  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Paraugi/FeatureServer/0/query";
+  const paraugiURL = "https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/akd_mezuparb_paraugi_gatavais/FeatureServer/0/query";
+  //"https://services1.arcgis.com/3dWrAGXGF8L1iW48/arcgis/rest/services/AKD_MezuParb_Paraugi/FeatureServer/0/query";
   const paraugiOptions = {
     responseType: "json",
     query: {
